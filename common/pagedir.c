@@ -3,13 +3,15 @@ pagedir.c
 
 Kiran Jones, CS50 25W
 
+Error exit codes 20-24
+
 */
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
-#include "webpage.h"
+#include "../libcs50/webpage.h"
 
 
 
@@ -22,12 +24,13 @@ pagedir_init(const char* pageDirectory)
     close the file and return true.
     */
 
-   char* crawlerExtension = '/.crawler';
-
+   // extension 
+   char* crawlerExtension = "/.crawler";
+    // malloc space the size of length pageDirectory + length crawlerExtension + null terminator
    char* pathName = malloc(sizeof(char) * ( strlen(pageDirectory) + strlen(crawlerExtension) + 1 ));
    if (pathName == NULL) {
     fprintf(stderr, "Error creating pathName");
-    exit(11);
+    exit(20);
    }
 
     // copy the path that leads to the directory to the newly-allocated space
@@ -61,17 +64,19 @@ pagedir_save(const webpage_t* page, const char* pageDirectory, const int docID)
     print the contents of the webpage
     close the file
     */
-    char* pathName = malloc(sizeof(char) * (strlen(pageDirectory) + sizeof(int)));
-    if (pathName == NULL) {
-        fprintf(stderr, "Error creating pathName");
-        exit(12);
-    }
-
     char* charID = malloc(sizeof(int) + 1);
     sprintf(charID, "%d", docID);
 
+    char* pathName = malloc(sizeof(char) * (strlen(pageDirectory) + strlen(charID) + 2)); // plus two for backslash and null terminator 
+    if (pathName == NULL) {
+        fprintf(stderr, "Error creating pathName\n");
+        exit(21);
+    }
+
+    
+
     strcpy(pathName, pageDirectory);
-    strcat(pathName, charID);
+    strcat(strcat(pathName, "/"), charID); // adds slash to the end of pathName, and the appends charID
 
     free(charID);
 
@@ -79,13 +84,35 @@ pagedir_save(const webpage_t* page, const char* pageDirectory, const int docID)
     
     if (fp == NULL) {
         free(pathName);
-        exit(13);
+        fprintf(stderr, "Unable to open file for writing\n");
+        exit(22);
     }
 
-    fprintf(fp, "%s", page->)
+    char* url = webpage_getURL(page);
+    if (url == NULL) {
+        fprintf(stderr, "Error getting webpage from URL\n");
+        exit(23);
+    }
 
+    fprintf(fp, "%s\n", url);
 
+    int depth = webpage_getDepth(page);
 
+    fprintf(fp, "%d\n", depth);
+
+    char* html = webpage_getHTML(page);
+    if (html == NULL) {
+        fprintf(stderr, "Error getting HTML from URL\n");
+        exit(24);
+    }
+
+    fprintf(fp, "%s\n", html);
+
+    printf("saved %s to file\n", webpage_getURL(page));
+    free(pathName);
+    fclose(fp);
+
+    // printf("saved pageID: %d saved to file\n", docID);
 
 
 }
