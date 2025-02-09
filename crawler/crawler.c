@@ -4,15 +4,17 @@ crawler.c
 
 Kiran Jones, CS50 25W
 
+Error exit codes 1-10
+
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "hashtable.h"
-#include "webpage.h"
-#include "bag.h"
-#include "pagedir.h"
+#include "../libcs50/hashtable.h"
+#include "../libcs50/bag.h"
+#include "../libcs50/webpage.h"
+#include "../common/pagedir.h"
 
 
 // args: crawler seedURL pageDirectory maxDepth
@@ -20,13 +22,24 @@ Kiran Jones, CS50 25W
 // bag of pages not yet explored 
 // hashtable of explored URLs (start at 200)
 
+static void parseArgs(const int argc, char* argv[], char** seedURL, char** pageDirectory, int* maxDepth);
+
+static void crawl(char* seedURL, char* pageDirectory, const int maxDepth);
+
+static void pageScan(webpage_t* page, bag_t* pagesToCrawl, hashtable_t* pagesSeen);
+
+
+static void itemdelete(void* item);
 
 
 int
 main(int argc, char* argv[])
 {
-    parseArgs(argc, argv, argv[1], argv[2], argv[3]);
-    crawl(argv[1], argv[2], argv[3]);
+    char* seedURL = NULL;
+    char* pageDirectory = NULL;
+    int maxDepth = 0;
+    parseArgs(argc, argv, &seedURL, &pageDirectory, &maxDepth);
+    crawl(seedURL, pageDirectory, maxDepth);
 
     return 0;
 }
@@ -39,31 +52,40 @@ parseArgs(const int argc, char* argv[], char** seedURL, char** pageDirectory, in
         exit(1);
     }
 
-    if (seedURL == NULL || pageDirectory == NULL || maxDepth == NULL) {
-        exit(1);
-    }
 
-
-    char* normalizedURL = normalizeURL(seedURL);
+    char* normalizedURL = normalizeURL(argv[1]);
     if (normalizedURL == NULL) {
-        fprintf(stderr, "Error normalizing URL: %s\n", seedURL);
-        exit(1);
+        fprintf(stderr, "Error normalizing URL (argv1)\n");
+        exit(2);
     }
-    free(normalizedURL);
 
     if (!isInternalURL(normalizedURL)) {
-        fprintf(stderr, "Not an internal URL: %s\n", normalizedURL);
-        exit(1);
+        free(normalizedURL);
+        fprintf(stderr, "Not an internal URL (argv1)\n");
+        exit(3);
+            }
+
+    *seedURL = normalizedURL;
+
+    if (!pagedir_init(argv[2])) {
+        fprintf(stderr, "Error initialzing pageDirectory (argv2)\n");
+        exit(4);
     }
 
-    if (!pagedir_init(pageDirectory)) {
-        fprintf(stderr, "Error initialzing pageDirectory\n");
-        exit(1);
+    *pageDirectory = argv[2];
+
+    int depth;
+
+    if (sscanf(argv[3], "%d", &depth) != 1) {
+        fprintf(stderr, "Error parsing maxDepth (argv3)\n");
+        exit(5);
     }
 
-    if (maxDepth < 0 || maxDepth > 10) {
-        fprintf(stderr, "Invalid maxDepth: %d, must be between 0 and 10\n", maxDepth);
-        exit(1);
+    *maxDepth = depth;
+
+    if (*maxDepth < 0 || *maxDepth > 10) {
+        fprintf(stderr, "Invalid maxDepth, must be between 0 and 10 (argv3)\n");
+        exit(6);
     }
 
 }
@@ -79,19 +101,19 @@ crawl(char* seedURL, char* pageDirectory, const int maxDepth)
     hashtable_t* ht = hashtable_new(num_slots);
     if (ht == NULL) {
         fprintf(stderr, "Error creating hashtable\n");
-        exit(1);
+        exit(7);
     }
 
     bag_t* bag = bag_new();
     if (bag == NULL) {
         fprintf(stderr, "Error creating bag\n");
-        exit(1);
+        exit(8);
     }
 
     webpage_t* seedPage = webpage_new(seedURL, 0, NULL); // need to normalize URL? 
     if (seedPage == NULL) {
         fprintf(stderr, "Error creating seedPage\n");
-        exit(1);
+        exit(9);
     }
     
     
@@ -117,9 +139,10 @@ crawl(char* seedURL, char* pageDirectory, const int maxDepth)
                 pageScan(currentPage, bag, ht);
             }
         }
+        printf("deleting %s\n", webpage_getURL(currentPage));
         webpage_delete(currentPage);
     }
-    hashtable_delete(ht, itemdelete);
+    hashtable_delete(ht, NULL); // all values in ht are "", no need to free them
     bag_delete(bag, itemdelete);
 }
 
@@ -134,16 +157,28 @@ pageScan(webpage_t* page, bag_t* pagesToCrawl, hashtable_t* pagesSeen)
     int pos = 0;
     char* url;
     char* normalizedURL;
-    while ((url = webpage_getNextURL(page, &pos)) != NULL) {
+    while ( (url = webpage_getNextURL(page, &pos)) != NULL) {
         normalizedURL = normalizeURL(url);
+
+        if (normalizedURL == NULL) {
+            free(normalizedURL);
+        }
+
+
         if (normalizedURL != NULL && isInternalURL(normalizedURL)) {
             if (hashtable_insert(pagesSeen, normalizedURL, "")) {
                 webpage_t* newPage = webpage_new(normalizedURL, webpage_getDepth(page) + 1, NULL);
                 bag_insert(pagesToCrawl, newPage);
             }
+            else {
+                free(normalizedURL);
+            }
+        }
+        else {
+            free(normalizedURL);
         }
         free(url);
-        free(normalizedURL);
+        // free(normalizedURL);
     }
 }
 
@@ -152,6 +187,6 @@ static void
 itemdelete(void* item) 
 {
     if (item != NULL) {
-        webpage_delete(item);
+        free(item);
     }
 }

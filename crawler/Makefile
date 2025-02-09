@@ -3,11 +3,13 @@
 
 # Compiler and Flags
 CC = gcc
-CFLAGS = -Wall -pedantic -std=c11 -ggdb $(TESTING) -I../lib
+# Libraries
+LIBS = ../libcs50/libcs50-given.a ../common/common.a
+
+CFLAGS = -Wall -pedantic -std=c11 -ggdb $(TESTING) -I$LIBS
 VALGRIND = valgrind --leak-check=full --show-leak-kinds=all
 
-# Libraries
-LIBS = ../libcs50/libcs50-given.a
+
 
 # Dependencies 
 OBJS = crawler.o ../common/pagedir.o
@@ -21,7 +23,7 @@ all: $(TARGET)
 
 # build
 $(TARGET): $(OBJS) $(LIBS)
-	$(CC) $(CFLAGS) -o $(TARGET)
+	$(CC) $(CFLAGS) $(OBJS) $(LIBS) -o $(TARGET)
 
 # test
 test: $(TARGET) testing.sh
@@ -29,10 +31,12 @@ test: $(TARGET) testing.sh
 
 # valgrind
 valgrind: $(TARGET)
-	$(VALGRIND) ./$(TARGET) http://cs50tse.cs.dartmouth.edu/tse/ ../data/letters/
+	$(VALGRIND) ./$(TARGET) http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters/ 4
 
 # clean
 clean:
 	rm -f $(OBJ) $(TARGET)
 	rm -rf ../data/letters*
+	rm -rf ../data/scrape*
+	rm -rf ../data/wiki*
 
