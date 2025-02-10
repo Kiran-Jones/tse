@@ -28,13 +28,16 @@ static void crawl(char* seedURL, char* pageDirectory, const int maxDepth);
 
 static void pageScan(webpage_t* page, bag_t* pagesToCrawl, hashtable_t* pagesSeen);
 
-
 static void itemdelete(void* item);
+
+static void logr(const char *word, const int depth, const char *url);
 
 
 int
 main(int argc, char* argv[])
 {
+
+    
     char* seedURL = NULL;
     char* pageDirectory = NULL;
     int maxDepth = 0;
@@ -47,8 +50,9 @@ main(int argc, char* argv[])
 static void
 parseArgs(const int argc, char* argv[], char** seedURL, char** pageDirectory, int* maxDepth) 
 {
-    if (argc != 4) {
+    if (argc != 4 && argc != 5) {
         printf("Invalid number of arguments: %d\n", argc);
+        printf("Correct format: crawler seedURL pageDirectory maxDepth\n");
         exit(1);
     }
 
@@ -63,7 +67,7 @@ parseArgs(const int argc, char* argv[], char** seedURL, char** pageDirectory, in
         free(normalizedURL);
         fprintf(stderr, "Not an internal URL (argv1)\n");
         exit(3);
-            }
+    }
 
     *seedURL = normalizedURL;
 
@@ -127,19 +131,21 @@ crawl(char* seedURL, char* pageDirectory, const int maxDepth)
 
         // fetch html of currentPage (stored in currentPage->html)
         if (webpage_fetch(currentPage)) {
+            logr("Fetched", webpage_getDepth(currentPage), webpage_getURL(currentPage));
 
             // save currentPage to page directory 
             pagedir_save(currentPage, pageDirectory, docID);
+
 
             // increment docID
             docID ++;
 
             // search for embedded if not at max depth
-            if (webpage_getDepth(currentPage) < maxDepth) {                
+            if (webpage_getDepth(currentPage) < maxDepth) {      
+                logr("Scanning", webpage_getDepth(currentPage), webpage_getURL(currentPage));
                 pageScan(currentPage, bag, ht);
             }
         }
-        printf("deleting %s\n", webpage_getURL(currentPage));
         webpage_delete(currentPage);
     }
     hashtable_delete(ht, NULL); // all values in ht are "", no need to free them
@@ -160,27 +166,30 @@ pageScan(webpage_t* page, bag_t* pagesToCrawl, hashtable_t* pagesSeen)
     while ( (url = webpage_getNextURL(page, &pos)) != NULL) {
         normalizedURL = normalizeURL(url);
 
+        // used complex if-else structure to allow for propper logging messages 
         if (normalizedURL == NULL) {
             free(normalizedURL);
-        }
-
-
-        if (normalizedURL != NULL && isInternalURL(normalizedURL)) {
-            if (hashtable_insert(pagesSeen, normalizedURL, "")) {
-                webpage_t* newPage = webpage_new(normalizedURL, webpage_getDepth(page) + 1, NULL);
-                bag_insert(pagesToCrawl, newPage);
-            }
-            else {
+        } else {
+            logr("Found", webpage_getDepth(page) + 1, normalizedURL);
+            if (isInternalURL(normalizedURL)) {
+                if (hashtable_insert(pagesSeen, normalizedURL, "")) {
+                    webpage_t* newPage = webpage_new(normalizedURL, webpage_getDepth(page) + 1, NULL);
+                    bag_insert(pagesToCrawl, newPage);
+                    logr("Added", webpage_getDepth(newPage), webpage_getURL(newPage));
+                } else {
+                    logr("IgnDupl", webpage_getDepth(page) + 1, normalizedURL);
+                    free(normalizedURL);
+                }
+            } else {
+                logr("IgnExtern", webpage_getDepth(page) + 1, normalizedURL);
                 free(normalizedURL);
             }
         }
-        else {
-            free(normalizedURL);
-        }
         free(url);
-        // free(normalizedURL);
     }
 }
+
+
 
 
 static void
@@ -189,4 +198,14 @@ itemdelete(void* item)
     if (item != NULL) {
         free(item);
     }
+}
+
+// logging function from crawler-logging.md
+static void logr(const char *word, const int depth, const char *url)
+{
+#ifdef TEST
+  printf("%2d %*s%9s: %s\n", depth, depth, "", word, url);
+#else
+  ;
+#endif
 }

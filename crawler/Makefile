@@ -1,6 +1,3 @@
-
-
-
 # Compiler and Flags
 CC = gcc
 # Libraries
@@ -16,7 +13,6 @@ OBJS = crawler.o ../common/pagedir.o
 
 .PHONY: all clean test valgrind
 
-
 # Default target
 TARGET = crawler
 all: $(TARGET)
@@ -26,6 +22,7 @@ $(TARGET): $(OBJS) $(LIBS)
 	$(CC) $(CFLAGS) $(OBJS) $(LIBS) -o $(TARGET)
 
 # test
+test: TESTING = -DTEST
 test: $(TARGET) testing.sh
 	bash -v testing.sh
 

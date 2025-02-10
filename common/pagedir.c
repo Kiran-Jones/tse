@@ -13,6 +13,9 @@ Error exit codes 20-24
 #include <string.h>
 #include "../libcs50/webpage.h"
 
+bool pagedir_init(const char* pageDirectory);
+
+void pagedir_save(const webpage_t* page, const char* pageDirectory, const int docID);
 
 
 bool 
@@ -108,11 +111,8 @@ pagedir_save(const webpage_t* page, const char* pageDirectory, const int docID)
 
     fprintf(fp, "%s\n", html);
 
-    printf("saved %s to file\n", webpage_getURL(page));
     free(pathName);
     fclose(fp);
 
-    // printf("saved pageID: %d saved to file\n", docID);
-
-
 }
+
