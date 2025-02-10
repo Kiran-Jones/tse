@@ -12,3 +12,6 @@ There were no assumptions other than those outlined in the assignment directions
 
 ## Complilation and Testing
 `make` compliles all needed files and creates an excecutable, named crawler. `make test` can be used to test the crawler. By default, verbose logging is enabled. To disable this feature, comment out the line `test: TESTING = -DLOGGING`, as specified in the Makefile. `make valgrind` will run a memory test using crawler, which is passed without memory leaks. Finally, `make clean` can be used to delete all files created by other `make` commands. 
+
+## Known Issues
+There are no known issues with this module. 
