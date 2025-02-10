@@ -50,7 +50,7 @@ main(int argc, char* argv[])
 static void
 parseArgs(const int argc, char* argv[], char** seedURL, char** pageDirectory, int* maxDepth) 
 {
-    if (argc != 4 && argc != 5) {
+    if (argc != 4) {
         printf("Invalid number of arguments: %d\n", argc);
         printf("Correct format: crawler seedURL pageDirectory maxDepth\n");
         exit(1);
@@ -203,7 +203,7 @@ itemdelete(void* item)
 // logging function from crawler-logging.md
 static void logr(const char *word, const int depth, const char *url)
 {
-#ifdef TEST
+#ifdef LOGGING
   printf("%2d %*s%9s: %s\n", depth, depth, "", word, url);
 #else
   ;
