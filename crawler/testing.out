@@ -1,0 +1,123 @@
+bash -v testing.sh
+module () {  local _mlredir=1;
+ if [ -n "${MODULES_REDIRECT_OUTPUT+x}" ]; then
+ if [ "$MODULES_REDIRECT_OUTPUT" = '0' ]; then
+ _mlredir=0;
+ else
+ if [ "$MODULES_REDIRECT_OUTPUT" = '1' ]; then
+ _mlredir=1;
+ fi;
+ fi;
+ fi;
+ case " $@ " in 
+ *' --no-redirect '*)
+ _mlredir=0
+ ;;
+ *' --redirect '*)
+ _mlredir=1
+ ;;
+ esac;
+ if [ $_mlredir -eq 0 ]; then
+ _module_raw "$@";
+ else
+ _module_raw "$@" 2>&1;
+ fi
+}
+ml () {  module ml "$@"
+}
+_module_raw () {  eval "$(/usr/bin/tclsh8.6 '/usr/lib/x86_64-linux-gnu/modulecmd.tcl' bash "$@")";
+ _mlstatus=$?;
+ return $_mlstatus
+}
+mkdir ../data
+mkdir: cannot create directory '../data': File exists
+mkdir ../data/letters
+mkdir: cannot create directory '../data/letters': File exists
+mkdir ../data/scrape
+mkdir: cannot create directory '../data/scrape': File exists
+mkdir ../data/wiki
+mkdir: cannot create directory '../data/wiki': File exists
+
+
+# 1. Erroneous arguments
+
+# too few arguments (1)
+./crawler
+Invalid number of arguments: 1
+Correct format: crawler seedURL pageDirectory maxDepth
+
+# too many arguments (6)
+
+./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters 2 extraArgument oneMoreArgument 
+Invalid number of arguments: 6
+Correct format: crawler seedURL pageDirectory maxDepth
+
+# bad URL
+./crawler iufhkcsjdns ../data/letters 2
+Error normalizing URL (argv1)
+
+# not internal URL
+./crawler https://home.dartmouth.edu/ ..data/letters 2
+Not an internal URL (argv1)
+
+
+# invalid maxDepth (too low)
+./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters -1
+Invalid maxDepth, must be between 0 and 10 (argv3)
+
+# invalid maxDepth (too high)
+./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters 11
+Invalid maxDepth, must be between 0 and 10 (argv3)
+
+# invalid maxDepth (not an int) 
+./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters two
+Error parsing maxDepth (argv3)
+
+
+# 2. valgrind with moderate-sized test case
+
+myvalgrind http://cs50tse.cs.dartmouth.edu/tse/toscrape/ ../data/scrape 1
+testing.sh: line 35: myvalgrind: command not found
+
+# 3. run over all CS50 websites with specified depths
+
+# letters with [0, 1, 2, 10]
+./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters 0
+./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters 10
+
+# tests not used in testing.out
+# ./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters 1
+# ./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters 2
+
+# toscrape with [0, 1, 2, 3]
+./crawler http://cs50tse.cs.dartmouth.edu/tse/toscrape/ ../data/scrape 0
+./crawler http://cs50tse.cs.dartmouth.edu/tse/toscrape/ ../data/scrape 1
+
+# tests not used in testing.out
+# ./crawler http://cs50tse.cs.dartmouth.edu/tse/toscrape/ ../data/scrape 2
+# ./crawler http://cs50tse.cs.dartmouth.edu/tse/toscrape/ ../data/scrape 3
+
+# wikipedia with [0, 1, 2]
+./crawler http://cs50tse.cs.dartmouth.edu/tse/wikipedia/ ../data/wiki 0
+./crawler http://cs50tse.cs.dartmouth.edu/tse/wikipedia/ ../data/wiki 1
+
+# tests not used in testing.out
+# ./crawler http://cs50tse.cs.dartmouth.edu/tse/wikipedia/ ../data/wiki 2
+
+# 4. valgrind test
+
+valgrind --leak-check=full --show-leak-kinds=all ./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters 10
+==1432187== Memcheck, a memory error detector
+==1432187== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==1432187== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==1432187== Command: ./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters 10
+==1432187== 
+==1432187== 
+==1432187== HEAP SUMMARY:
+==1432187==     in use at exit: 0 bytes in 0 blocks
+==1432187==   total heap usage: 1,702 allocs, 1,702 frees, 335,629 bytes allocated
+==1432187== 
+==1432187== All heap blocks were freed -- no leaks are possible
+==1432187== 
+==1432187== For lists of detected and suppressed errors, rerun with: -s
+==1432187== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
