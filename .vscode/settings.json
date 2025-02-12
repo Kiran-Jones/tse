@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "stdlib.h": "c",
+        "chrono": "c",
+        "functional": "c",
+        "__locale": "c",
+        "random": "c",
+        "queue": "c",
+        "stack": "c",
+        "hashtable.h": "c",
+        "string.h": "c",
+        "pagedir.h": "c",
+        "counters.h": "c",
+        "index.h": "c"
+    }
+}
