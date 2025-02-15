@@ -13,6 +13,10 @@
 #include <string.h>
 #include "../libcs50/hashtable.h"
 #include "../libcs50/counters.h"
+#include "../libcs50/file.h"
+
+typedef hashtable_t index_t;
+
 
 index_t* index_new(const int num_slots);
 
@@ -30,8 +34,9 @@ index_t* index_read(char* fileName);
 
 void index_delete(index_t* index);
 
+void counters_delete_helper(void* counters);
 
-typedef hashtable_t index_t;
+
 
 
 index_t* 
@@ -67,6 +72,7 @@ index_write(index_t* index, FILE* fp)
 
     if (index != NULL && fp != NULL)
     {
+        printf("in index_write\n");
         hashtable_iterate((hashtable_t*) index, fp, writeHashtable);
         fclose(fp);
         index_delete(index);
@@ -93,6 +99,9 @@ writeHashtable(void* fp, const char* word, void* counters)
 void 
 writeCounters(void* fp, const int docID, const int count) 
 {
+    // print the docID followed by a space followed by the count followed by a space
+    // new line not printed here as every docID and count pair associated with a given word is printed on the same line
+    // ex. with with docID and count pairs [1, 5] and [2, 10]: "1 5 2 10"
     fprintf((FILE*)fp, "%d %d ", docID, count);
 }
 
@@ -116,7 +125,12 @@ index_read(char* fileName)
     int count = 0;
 
     while ( (word = file_readWord(fp)) != NULL) {
-        counters = counters_new();
+
+        // current structure allows for one word to be found multiple times in a file
+        // remove? 
+        if ((counters = index_find(index, word)) == NULL) {
+            counters = counters_new();
+        }
 
         if (counters == NULL) {
             fprintf(stderr, "Error creating counters\n");
@@ -137,9 +151,13 @@ index_read(char* fileName)
 }
 
 
-
 void 
 index_delete(index_t* index) 
 {
-    hashtable_delete((hashtable_t*) index, counters_delete);
+    hashtable_delete((hashtable_t*) index, counters_delete_helper);
+}
+
+void
+counters_delete_helper(void* counters) {
+    counters_delete((counters_t*) counters);
 }

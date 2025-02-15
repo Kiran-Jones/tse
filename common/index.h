@@ -6,6 +6,14 @@
 * 
 */
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "../libcs50/hashtable.h"
+#include "../libcs50/counters.h"
+
+typedef hashtable_t index_t;
+
 
 index_t* index_new(const int num_slots);
 
@@ -23,5 +31,6 @@ index_t* index_read(char* fileName);
 
 void index_delete(index_t* index);
 
+void counters_delete_helper(void* counters);
 
-typedef hashtable_t index_t;
+
