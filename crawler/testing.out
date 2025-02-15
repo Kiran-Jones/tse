@@ -76,48 +76,39 @@ Error parsing maxDepth (argv3)
 
 # 2. valgrind with moderate-sized test case
 
-myvalgrind http://cs50tse.cs.dartmouth.edu/tse/toscrape/ ../data/scrape 1
-testing.sh: line 35: myvalgrind: command not found
+valgrind --leak-check=full --show-leak-kinds=all ./crawler http://cs50tse.cs.dartmouth.edu/tse/toscrape/ ../data/scrape 1
+==1455081== Memcheck, a memory error detector
+==1455081== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==1455081== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==1455081== Command: ./crawler http://cs50tse.cs.dartmouth.edu/tse/toscrape/ ../data/scrape 1
+==1455081== 
+==1455081== 
+==1455081== HEAP SUMMARY:
+==1455081==     in use at exit: 0 bytes in 0 blocks
+==1455081==   total heap usage: 2,352,359 allocs, 2,352,359 frees, 44,057,816,939 bytes allocated
+==1455081== 
+==1455081== All heap blocks were freed -- no leaks are possible
+==1455081== 
+==1455081== For lists of detected and suppressed errors, rerun with: -s
+==1455081== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 
 # 3. run over all CS50 websites with specified depths
 
 # letters with [0, 1, 2, 10]
 ./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters 0
-./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters 10
-
-# tests not used in testing.out
 # ./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters 1
 # ./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters 2
+./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters 10
 
 # toscrape with [0, 1, 2, 3]
 ./crawler http://cs50tse.cs.dartmouth.edu/tse/toscrape/ ../data/scrape 0
 ./crawler http://cs50tse.cs.dartmouth.edu/tse/toscrape/ ../data/scrape 1
-
-# tests not used in testing.out
 # ./crawler http://cs50tse.cs.dartmouth.edu/tse/toscrape/ ../data/scrape 2
 # ./crawler http://cs50tse.cs.dartmouth.edu/tse/toscrape/ ../data/scrape 3
 
 # wikipedia with [0, 1, 2]
 ./crawler http://cs50tse.cs.dartmouth.edu/tse/wikipedia/ ../data/wiki 0
 ./crawler http://cs50tse.cs.dartmouth.edu/tse/wikipedia/ ../data/wiki 1
-
-# tests not used in testing.out
 # ./crawler http://cs50tse.cs.dartmouth.edu/tse/wikipedia/ ../data/wiki 2
 
-# 4. valgrind test
 
-valgrind --leak-check=full --show-leak-kinds=all ./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters 10
-==1432187== Memcheck, a memory error detector
-==1432187== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
-==1432187== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
-==1432187== Command: ./crawler http://cs50tse.cs.dartmouth.edu/tse/letters/ ../data/letters 10
-==1432187== 
-==1432187== 
-==1432187== HEAP SUMMARY:
-==1432187==     in use at exit: 0 bytes in 0 blocks
-==1432187==   total heap usage: 1,702 allocs, 1,702 frees, 335,629 bytes allocated
-==1432187== 
-==1432187== All heap blocks were freed -- no leaks are possible
-==1432187== 
-==1432187== For lists of detected and suppressed errors, rerun with: -s
-==1432187== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
