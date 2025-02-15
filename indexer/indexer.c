@@ -9,8 +9,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "../common/pagedir.h"
-// #include "../common/index.h"
-// #include "../common/word.h"
 #include "../libcs50/hashtable.h"
 #include "../libcs50/webpage.h"
 #include "../libcs50/counters.h"
@@ -19,27 +17,32 @@
 
 
 
+static void parseArgs(int argc, char* argv[], char** pageDirectory, char** indexFilename);
 
-static void parseArgs(const int argc, char* argv[], char** pageDirectory, char** indexFilename);
-
-static index_t* indexBuild(const char** pageDirectory);
+static index_t* indexBuild(char* pageDirectory);
 
 static void indexPage(webpage_t* webpage, int docID, index_t* index);
 
 // ./indexer pageDirectory indexFilename
 
-int main(const int argc, char* argv[])
+int 
+main(int argc, char* argv[])
 {
 
     char* pageDirectory = NULL;
     char* indexFilename = NULL;
     parseArgs(argc, argv, &pageDirectory, &indexFilename);
     index_t* index = indexBuild(pageDirectory);
-    index_write(index, indexFilename);
 
+    // file is closed in index_write()
+    FILE * fp = fopen(indexFilename, "w");
+
+    index_write(index, fp);
+    
+    return 0;
 }
 
-static void parseArgs(const int argc, char* argv[], char** pageDirectory, char** indexFilename) 
+static void parseArgs(int argc, char* argv[], char** pageDirectory, char** indexFilename) 
 {
     if (argc != 3) {
         exit(1);
@@ -50,10 +53,8 @@ static void parseArgs(const int argc, char* argv[], char** pageDirectory, char**
 
 }
 
-
-
 static index_t* 
-indexBuild(const char** pageDirectory)
+indexBuild(char* pageDirectory)
 {
     // create new index object
     const int indexSize = 500;
@@ -62,16 +63,14 @@ indexBuild(const char** pageDirectory)
     int docID = 1; // starting docID
     webpage_t* webpage = NULL;
 
-    while ((webpage = pagedir_load(pageDirectory, docID))) { // implement pagedir_load
+    while ((webpage = pagedir_load(pageDirectory, docID)) != NULL) { 
         
         indexPage(webpage, docID, index);
         webpage_delete(webpage);
         docID++;
     }
-
-
+    return index;
 }
-
 
 static void 
 indexPage(webpage_t* webpage, int docID, index_t* index)
