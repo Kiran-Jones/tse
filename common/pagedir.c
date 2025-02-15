@@ -180,13 +180,9 @@ pagedir_load(char* pageDirectory, int docID)
 
     strcat(strcat(path, "/"), charID);
 
-    // strcat(path, charID);
-
     free(charID);
 
     FILE* fp = fopen(path, "r");
-
-    // printf("%s\n", path);
 
     if (fp == NULL) {
         free(path);

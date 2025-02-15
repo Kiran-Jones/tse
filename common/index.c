@@ -1,7 +1,7 @@
 /*
+* index.c
 * 
-* 
-* 
+* Kiran Jones, CS50 25W
 * 
 */
 
@@ -24,7 +24,7 @@ bool index_insert(index_t* index, char* word, counters_t* counters);
 
 counters_t* index_find(index_t* index, char* word);
 
-void index_write(index_t* index, FILE* fp);
+void index_write(index_t* index, char* indexFilename);
 
 void writeHashtable(void* fp, const char* word, void* counters);
 
@@ -37,21 +37,32 @@ void index_delete(index_t* index);
 void counters_delete_helper(void* counters);
 
 
-
-
+/*
+* Create new index 
+* Returns pointer to newly-created index
+*/
 index_t* 
 index_new(const int num_slots) 
 {
     return (index_t*) hashtable_new(num_slots);
 }
 
-// named function index_insert() to match with hashtable_insert() instead of index_save() as reccomended in the design document 
+/*
+* Insert word, counters pair into index
+* Returns success boolean
+* 
+* named function index_insert() to match with hashtable_insert() instead of index_save() which was reccomended in the design document 
+*/
 bool 
 index_insert(index_t* index, char* word, counters_t* counters)
 {
     return hashtable_insert((hashtable_t*) index, word, counters);
 }
 
+/*
+* Find in index from word
+* Returns pointer to counters associated with provided word (or NULL if error/word not in index)
+*/
 counters_t* 
 index_find(index_t* index, char* word)
 {
@@ -59,36 +70,40 @@ index_find(index_t* index, char* word)
 }
 
 
-// writes the index to a file, given the index and file
+/* 
+* Writes the index to a file, given the index and indexFilename
+*/
 void 
-index_write(index_t* index, FILE* fp)
+index_write(index_t* index, char* indexFilename)
 {
-
-    // for all words in index
-        // print word (space)
-        // for all counters in word
-            // print docID (space) count (space)
-        // print \n
+    // open indexFilename
+    FILE * fp = fopen(indexFilename, "w");
 
     if (index != NULL && fp != NULL)
     {
-        printf("in index_write\n");
+        // iterate over each slot in the hashtable, call writeHashtable() on each 
         hashtable_iterate((hashtable_t*) index, fp, writeHashtable);
+
+        // close the opened file pointer
         fclose(fp);
+
+        // delete the index
         index_delete(index);
     }
 }
 
+
+/* 
+* Helper function to write a word from the index (key in hashtable)
+*/
 void 
 writeHashtable(void* fp, const char* word, void* counters) 
 {
-    // key is word item is counters_t* 
-    // arg is fp
 
-    // print the word followed by a space
+    // write the word followed by a space to fp
     fprintf((FILE*)fp, "%s ", word);
 
-    // iterate over counters
+    // iterate over counters, call writeCounters on each 
     counters_iterate((counters_t*)counters, fp, writeCounters);
 
     // print a new line after each docID count pair
@@ -96,24 +111,39 @@ writeHashtable(void* fp, const char* word, void* counters)
 
 }
 
+/*
+* Helper function to write a docID count pair from a counter 
+*/
 void 
 writeCounters(void* fp, const int docID, const int count) 
 {
     // print the docID followed by a space followed by the count followed by a space
     // new line not printed here as every docID and count pair associated with a given word is printed on the same line
-    // ex. with with docID and count pairs [1, 5] and [2, 10]: "1 5 2 10"
+    // ex. with with docID and count pairs [1, 5] and [2, 10] (in two calls via counters_iterate): "1 5 2 10 "
     fprintf((FILE*)fp, "%d %d ", docID, count);
 }
 
 
-// creates an index from a given file, and returns it
+// creates an index from a given file and returns it
 index_t*
 index_read(char* fileName)
 {
+    // constant indexSize
     const static int indexSize = 500;
+
+    // creates new index of size indexSize
     index_t* index = index_new(indexSize);
 
+    // check if index_new() failed
+    if (index == NULL) {
+        fprintf(stderr, "Error creating new index of size %d\n", indexSize);
+        return NULL;
+    }
+
+    // attempt to open fileName with read ability 
     FILE* fp = fopen(fileName, "r");
+
+    // checl if error opening file
     if (fp == NULL) {
         fprintf(stderr, "Error opening file: %s\n", fileName);
         return NULL;
@@ -124,10 +154,10 @@ index_read(char* fileName)
     int docID = 0;
     int count = 0;
 
+    // iterate over each word in provided file fp
     while ( (word = file_readWord(fp)) != NULL) {
 
         // current structure allows for one word to be found multiple times in a file
-        // remove? 
         if ((counters = index_find(index, word)) == NULL) {
             counters = counters_new();
         }

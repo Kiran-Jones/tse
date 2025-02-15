@@ -21,7 +21,7 @@ bool index_insert(index_t* index, char* word, counters_t* counters);
 
 counters_t* index_find(index_t* index, char* word);
 
-void index_write(index_t* index, FILE* fp);
+void index_write(index_t* index, char* indexFilename);
 
 void writeHashtable(void* fp, const char* word, void* counters);
 

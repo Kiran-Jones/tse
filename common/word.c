@@ -14,6 +14,8 @@
 void
 normalizeWord(char* word) 
 {
+    // iterate over word, call tolower() on each character
+    // modifies in place, no need to return
     for (int i = 0; word[i] != '\0'; i++) {
         word[i] = tolower(word[i]);
     }
