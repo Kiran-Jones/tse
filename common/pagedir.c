@@ -11,15 +11,21 @@ Error exit codes 20-24
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdbool.h>
 #include "../libcs50/webpage.h"
+#include "pagedir.h"
+#include "../libcs50/file.h"
 
-bool pagedir_init(const char* pageDirectory);
+bool pagedir_init(char* pageDirectory);
 
-void pagedir_save(const webpage_t* page, const char* pageDirectory, const int docID);
+void pagedir_save(webpage_t* page, char* pageDirectory, int docID);
 
+bool pagedir_validate(char* pageDirectory);
+
+webpage_t* pagedir_load(char* pageDirectory, int docID);
 
 bool 
-pagedir_init(const char* pageDirectory)
+pagedir_init(char* pageDirectory)
 {
     /*
     construct the pathname for the .crawler file in that directory
@@ -57,7 +63,7 @@ pagedir_init(const char* pageDirectory)
 
 // creates a file for the given webpage and writes the URL, depth, and html to it
 void 
-pagedir_save(const webpage_t* page, const char* pageDirectory, const int docID)
+pagedir_save(webpage_t* page, char* pageDirectory, int docID)
 {
     /*
     construct the pathname for the page file in pageDirectory
@@ -118,12 +124,43 @@ pagedir_save(const webpage_t* page, const char* pageDirectory, const int docID)
 
 
 
-pagedir_validate(dir);
+bool 
+pagedir_validate(char* pageDirectory)
+{
+    if (pageDirectory == NULL) {
+        return false;
+    }
 
+    // crawler extension added to crawler-made directories 
+    char* crawlerExtension = "/.crawler";
+
+    // malloc space for pageDirectory + crawlerExtension + null terminator 
+    char* crawlerPath = malloc(sizeof(char) * (strlen(pageDirectory) + strlen(crawlerExtension))  + 1);
+
+    strcat(crawlerPath, pageDirectory);
+    strcat(crawlerPath, crawlerExtension);
+
+    // strcat adds null terminator 
+    // strcat(crawlerPath, '\0');
+
+    FILE* fp = fopen(crawlerPath, "r");
+
+    free(crawlerPath);
+
+    // if file does not exist (not a crawler directory)
+    if (fp == NULL) {
+        fprintf(stderr, "Error opening crawlerPath (pageDirectory may not be crawler produced)\n");
+        return false;
+    }
+
+    // a file named .crawler exists, close it and return true
+    fclose(fp);
+    return true;
+}
 
 
 webpage_t*
-pagedir_load(const char* pageDirectory, int docID) 
+pagedir_load(char* pageDirectory, int docID) 
 {
     if (pageDirectory == NULL) {
         return NULL;
@@ -141,24 +178,43 @@ pagedir_load(const char* pageDirectory, int docID)
 
     sprintf(charID, "%d", docID);
 
-    strcpy(charID, docID);
+    strcat(strcat(path, "/"), charID);
 
-    strcat(path, "/");
-
-    strcat(path, charID);
+    // strcat(path, charID);
 
     free(charID);
 
     FILE* fp = fopen(path, "r");
 
+    // printf("%s\n", path);
+
     if (fp == NULL) {
-        fprintf(stderr, "Error creating fp\n");
         free(path);
         return NULL;
     }
 
-    
+    printf("%s\n", path);
 
+    // first line is URL
+    char* url = file_readLine(fp);
 
+    // second line is depth, convert char* to int
+    char* charDepth = file_readLine(fp);
+    int depth;
+    sscanf(charDepth, "%d", &depth);
+    free(charDepth);
 
+    // reads the remainder of the file (HTML is more than 1 line)
+    char* html = file_readFile(fp);
+
+    fclose(fp);
+    free(path);
+
+    webpage_t* webpage = webpage_new(url, depth, html);
+
+    if (webpage == NULL) {
+        fprintf(stderr, "Error creating webpage\n");
+        exit(1);
+    }
+    return webpage;
 }

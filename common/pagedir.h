@@ -6,6 +6,12 @@
  * Kiran Jones, CS50 25W
  */
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
+#include <stdbool.h>
+#include "../libcs50/webpage.h"
 
 /*
 * Initalizer function for the pageDirectory
@@ -14,7 +20,7 @@
 * Returns true on success, false if error
 * 
 */
-bool pagedir_init(const char* pageDirectory);
+bool pagedir_init(char* pageDirectory);
 
 
 
@@ -23,4 +29,9 @@ bool pagedir_init(const char* pageDirectory);
 * Filename is docID, file location is pageDirectory/docID
 * File contents are the page->url, page->depth, page->html
 */
-void pagedir_save(const webpage_t* page, const char* pageDirectory, const int docID);
+void pagedir_save(webpage_t* page, char* pageDirectory, int docID);
+
+
+bool pagedir_validate(char* pageDirectory);
+
+webpage_t* pagedir_load(char* pageDirectory, int docID);
