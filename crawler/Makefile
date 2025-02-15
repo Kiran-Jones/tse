@@ -22,7 +22,7 @@ $(TARGET): $(OBJS) $(LIBS)
 	$(CC) $(CFLAGS) $(OBJS) $(LIBS) -o $(TARGET)
 
 # test
-# test: TESTING = -DLOGGING # comment on this line to turn off detailed logging for testing
+# test: TESTING = -DLOGGING # comment on this line to turn on detailed logging for testing
 test: $(TARGET) testing.sh
 	bash -v testing.sh
 
