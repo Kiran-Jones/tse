@@ -95,23 +95,23 @@ This module implements `pagedir_validate()` and `pagedir_load()` which are used 
 
 Pseudocode for `pagedir_validate`:
 ```
-	construct the pathname for the .crawler file in that directory
-	attempt to open the file with read permissions
-    if not able to access
-        return false
-	return true
+construct the pathname for the .crawler file in that directory
+attempt to open the file with read permissions
+if not able to access
+    return false
+return true
 
 ```
 
 Pseudocode for `pagedir_load`:
 ```
-	construct the pathname for the page file in pageDirectory
-	open that file for reading
-    get URL from file
-	get depth from file
-    get HTML from file
-    create new webpage using URL, depth, and HTML
-    return webpage
+construct the pathname for the page file in pageDirectory
+open that file for reading
+get URL from file
+get depth from file
+get HTML from file
+create new webpage using URL, depth, and HTML
+return webpage
 ```
 
 ### word
@@ -181,19 +181,13 @@ All code uses defensive-programming tactics to catch and exit, e.g., if a functi
 
 Here is an implementation-specific testing plan.
 
-### Unit testing
-
-There are only two units (crawler and pagedir).
-The crawler represents the whole system and is covered below.
-The pagedir unit is tiny; it could be tested using a small C 'driver' to invoke its functions with various arguments, but it is likely sufficient to observe its behavior during the system test.
-
 ### Using indextest
 
 As a whole, the `indexer` has many parts working together. The program `indextest` takes a file created by a previous run of `indexer` and re-creates an `index_t*` index from its contents. This inverted-index structure is then re-written to a new file. The originally-produced file and newly-produced files can then be checked for equivalence. Note: the created index files do not always have the same words on each line. To overcome this for testing file equivalence, we can use `indexcmp` located at `~/cs50-dev/shared/tse/indexcmp` to test for differences between the two files. The program prints each difference, e.g. if a run produces no output the files contain the same information (potentially in different orders). 
 
 ### Integration/system testing
 
-We write a script `testing.sh` that invokes the indexer several times, with a variety of command-line arguments.
+There is a script `testing.sh` that invokes the indexer several times, with a variety of command-line arguments. 
 First, a sequence of invocations with erroneous arguments, testing each of the possible mistakes that can be made for the indexer.
 Second, the three directories – letters, scrape, and wikipedia – are indexed and index tested. As previously described, the `indexcmp` is used to test the created index files. The letters test is run with valgrind to showcase propper memory allocation. The other tests are not, as their significantly larger size leads to quite slow performence with valgrind. 
 Third, a sequence of invocations with erroneous arguments, testing each of the possible mistakes that can be made for the indextest. These tests can be run with the command `make test`, and the output can be stored in `testing.out` with `make test &> testing.out`.
