@@ -122,8 +122,9 @@ pagedir_save(webpage_t* page, char* pageDirectory, int docID)
 }
 
 
-
-
+/*
+* check if a pageDirectory is crawler-produced e.g. has a file named .crawler
+*/
 bool 
 pagedir_validate(char* pageDirectory)
 {
@@ -134,8 +135,9 @@ pagedir_validate(char* pageDirectory)
     // crawler extension added to crawler-made directories 
     char* crawlerExtension = "/.crawler";
 
-    // malloc space for pageDirectory + crawlerExtension + null terminator 
-    char* crawlerPath = malloc(sizeof(char) * (strlen(pageDirectory) + strlen(crawlerExtension))  + 1);
+    // calloc space for pageDirectory + crawlerExtension + null terminator 
+    // used calloc to avoid error from using uninitialized variable with the next line (via strcat)
+    char* crawlerPath = calloc((strlen(pageDirectory) + strlen(crawlerExtension))  + 1, sizeof(char) );
 
     strcat(crawlerPath, pageDirectory);
     strcat(crawlerPath, crawlerExtension);
@@ -149,7 +151,6 @@ pagedir_validate(char* pageDirectory)
 
     // if file does not exist (not a crawler directory)
     if (fp == NULL) {
-        fprintf(stderr, "Error opening crawlerPath (pageDirectory may not be crawler produced)\n");
         return false;
     }
 
@@ -159,6 +160,11 @@ pagedir_validate(char* pageDirectory)
 }
 
 
+
+/*
+* Creates and returns a webpage_t* given a pageDirectory and docID (e.g. file created by crawler)
+* Reconstructs the file path, obtains the url, depth, and HTML from the file, creates new webpage_t* 
+*/
 webpage_t*
 pagedir_load(char* pageDirectory, int docID) 
 {
@@ -189,7 +195,6 @@ pagedir_load(char* pageDirectory, int docID)
         return NULL;
     }
 
-    printf("%s\n", path);
 
     // first line is URL
     char* url = file_readLine(fp);

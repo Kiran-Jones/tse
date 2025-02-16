@@ -143,7 +143,7 @@ index_read(char* fileName)
     // attempt to open fileName with read ability 
     FILE* fp = fopen(fileName, "r");
 
-    // checl if error opening file
+    // check if error opening file
     if (fp == NULL) {
         fprintf(stderr, "Error opening file: %s\n", fileName);
         return NULL;
@@ -157,7 +157,6 @@ index_read(char* fileName)
     // iterate over each word in provided file fp
     while ( (word = file_readWord(fp)) != NULL) {
 
-        // current structure allows for one word to be found multiple times in a file
         if ((counters = index_find(index, word)) == NULL) {
             counters = counters_new();
         }
