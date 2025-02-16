@@ -7,28 +7,30 @@ CFLAGS = -Wall -pedantic -std=c11 -ggdb $(TESTING) -I$LIBS
 VALGRIND = valgrind --leak-check=full --show-leak-kinds=all
 
 # Dependencies 
-OBJS = indexer.o ../common/pagedir.o ../common/index.o ../common/word.o
+INDEXER_OBJS = indexer.o ../common/pagedir.o ../common/index.o ../common/word.o
 
-.PHONY: all clean test valgrind
+INDEXTEST_OBJS = indextest.o ../common/pagedir.o ../common/index.o ../common/word.o
+
+.PHONY: all indexer indextest test clean
 
 # Default target
-TARGET = indexer
-all: $(TARGET)
+all: indexer indextest
 
 # build
-$(TARGET): $(OBJS) $(LIBS)
-	$(CC) $(CFLAGS) $(OBJS) $(LIBS) -o $(TARGET)
+indexer: $(INDEXER_OBJS) $(LIBS)
+	$(CC) $(CFLAGS) $(INDEXER_OBJS) $(LIBS) -o indexer
+
+indextest: $(INDEXTEST_OBJS) $(LIBS)
+	$(CC) $(CFLAGS) $(INDEXTEST_OBJS) $(LIBS) -o indextest
 
 # test
-# test: TESTING = -DLOGGING # comment on this line to turn on detailed logging for testing
-test: $(TARGET) testing.sh
+test: indexer indextest testing.sh
 	bash -v testing.sh
-
-# valgrind
-valgrind: $(TARGET)
-	$(VALGRIND) ./$(TARGET) ../data/letters ../data/letters.index
 
 # clean
 clean:
-	rm -f $(OBJ) $(TARGET)
-	rm -rf ../data/letters.index
+	rm -f $(INDEXER_OBJS) $(INDEXTEST_OBJS) indexer indextest
+	rm -f ../data/letters.index ../data/letters.indextest
+	rm -f ../data/scrape.index ../data/scrape.indextest
+	rm -f ../data/wiki.index ../data/wiki.indextest
+
