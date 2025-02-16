@@ -1,7 +1,7 @@
 # builds common.a library
 # also has clean which removes files produced by make
 
-OBJS = pagedir.o
+OBJS = pagedir.o word.o index.o
 LIB = common.a
 
 CFLAGS = -Wall -pedantic -std=c11 -ggdb
