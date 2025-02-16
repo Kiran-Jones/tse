@@ -9,7 +9,7 @@
 /*
 * "normalizes" a given word e.g. converts a word to lowercase
 * takes a char* word and modifies it in place, hence the function does not return anything
-* sample useage:
+* sample usage:
 * char* word = "HeLlO";
 * printf("initial word: %s\n", word); 
     prints "HeLlO"

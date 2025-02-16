@@ -1,10 +1,10 @@
 /*
-pagedir.c
-
-Kiran Jones, CS50 25W
-
-Error exit codes 20-24
-
+* pagedir.c
+* 
+* Kiran Jones, CS50 25W
+* 
+* Error exit codes 20-24
+* 
 */
 
 #include <stdlib.h>
@@ -24,14 +24,16 @@ bool pagedir_validate(char* pageDirectory);
 
 webpage_t* pagedir_load(char* pageDirectory, int docID);
 
+
+/*
+* Initalizer function for the pageDirectory
+* Ensures that pageDirectory is a valid path
+* Creates a .crawler file in the provided pageDirectory
+* Returns true on success, false if error
+*/
 bool 
 pagedir_init(char* pageDirectory)
 {
-    /*
-    construct the pathname for the .crawler file in that directory
-    open the file for writing; on error, return false.
-    close the file and return true.
-    */
 
    // extension 
    char* crawlerExtension = "/.crawler";
@@ -61,42 +63,42 @@ pagedir_init(char* pageDirectory)
 
 
 
-// creates a file for the given webpage and writes the URL, depth, and html to it
+/*
+* Creates a file for the given webpage and writes the URL, depth, and html to it
+*/
 void 
 pagedir_save(webpage_t* page, char* pageDirectory, int docID)
 {
-    /*
-    construct the pathname for the page file in pageDirectory
-    open that file for writing
-    print the URL
-    print the depth
-    print the contents of the webpage
-    close the file
-    */
+    // create a char* of docID
     char* charID = malloc(sizeof(int) + 1);
     sprintf(charID, "%d", docID);
 
+    // construct the pathname for the given file in pageDirectory
     char* pathName = malloc(sizeof(char) * (strlen(pageDirectory) + strlen(charID) + 2)); // plus two for backslash and null terminator 
+
+    // ensure malloc worked
     if (pathName == NULL) {
         fprintf(stderr, "Error creating pathName\n");
         exit(21);
     }
 
-    
-
+    // adds pageDirectory to newly-created pathName
     strcpy(pathName, pageDirectory);
     strcat(strcat(pathName, "/"), charID); // adds slash to the end of pathName, and the appends charID
 
+    // frees the char* representation of docID
     free(charID);
 
     FILE* fp = fopen(pathName, "w");
     
+    // check the file was opened sucessfully 
     if (fp == NULL) {
         free(pathName);
         fprintf(stderr, "Unable to open file for writing\n");
         exit(22);
     }
 
+    // retrived the URL
     char* url = webpage_getURL(page);
     if (url == NULL) {
         fprintf(stderr, "Error getting webpage from URL\n");
@@ -105,10 +107,12 @@ pagedir_save(webpage_t* page, char* pageDirectory, int docID)
 
     fprintf(fp, "%s\n", url);
 
+    // retrive the depth
     int depth = webpage_getDepth(page);
 
     fprintf(fp, "%d\n", depth);
 
+    // retrive the HTML
     char* html = webpage_getHTML(page);
     if (html == NULL) {
         fprintf(stderr, "Error getting HTML from URL\n");

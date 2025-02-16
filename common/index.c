@@ -2,11 +2,8 @@
 * index.c
 * 
 * Kiran Jones, CS50 25W
-* 
 */
 
-
-// hashtable(word) -> counters(docID) -> count of word in docID
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -60,7 +57,7 @@ index_insert(index_t* index, char* word, counters_t* counters)
 }
 
 /*
-* Find in index from word
+* Finds word in index
 * Returns pointer to counters associated with provided word (or NULL if error/word not in index)
 */
 counters_t* 
@@ -124,10 +121,18 @@ writeCounters(void* fp, const int docID, const int count)
 }
 
 
-// creates an index from a given file and returns it
+/* 
+* Creates an index_t* from a given index file and returns it
+*/
 index_t*
 index_read(char* fileName)
 {
+    // ensure fileName is valid
+    if (fileName == NULL) {
+        fprintf(stderr, "Error: fileName is NULL\n");
+        exit(1);
+    }
+
     // constant indexSize
     const static int indexSize = 500;
 
@@ -179,13 +184,18 @@ index_read(char* fileName)
     return index;
 }
 
-
+/*
+* Helper function to delete an index
+*/
 void 
 index_delete(index_t* index) 
 {
     hashtable_delete((hashtable_t*) index, counters_delete_helper);
 }
 
+/* 
+* Helper function to delete a counter
+*/
 void
 counters_delete_helper(void* counters) {
     counters_delete((counters_t*) counters);
