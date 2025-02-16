@@ -33,4 +33,7 @@ clean:
 	rm -f ../data/letters.index ../data/letters.indextest
 	rm -f ../data/scrape.index ../data/scrape.indextest
 	rm -f ../data/wiki.index ../data/wiki.indextest
+	rm -f ../data/testfiles/noreaddirectory ../data/testfiles/nowriteindex
+	rmdir ../data/testfiles
+
 

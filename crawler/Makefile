@@ -7,7 +7,6 @@ CFLAGS = -Wall -pedantic -std=c11 -ggdb $(TESTING) -I$LIBS
 VALGRIND = valgrind --leak-check=full --show-leak-kinds=all
 
 
-
 # Dependencies 
 OBJS = crawler.o ../common/pagedir.o
 
