@@ -96,7 +96,6 @@ index_write(index_t* index, char* indexFilename)
 void 
 writeHashtable(void* fp, const char* word, void* counters) 
 {
-
     // write the word followed by a space to fp
     fprintf((FILE*)fp, "%s ", word);
 
