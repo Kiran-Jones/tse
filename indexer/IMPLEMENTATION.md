@@ -16,7 +16,7 @@ The main data structure used is an `index`. An `index` is a hashtable of `char*`
 
 ## Control flow
 
-The Crawler is implemented in one file `indexer.c`, with four functions. Indexer also uses code from other modules, including `index.c`, `pagedir.c`, and `word.c`. 
+The indexer is implemented in one file `indexer.c`, with four functions. Indexer also uses code from other modules, including `index.c`, `pagedir.c`, and `word.c`. 
 
 ### main
 
@@ -129,7 +129,6 @@ for each character in the word
 We leverage the modules of libcs50, most notably `bag`, `hashtable`, and `webpage`.
 See that directory for module interfaces.
 The new `webpage` module allows us to represent pages as `webpage_t` objects, to fetch a page from the Internet, and to scan a (fetched) page for URLs; in that regard, it serves as the *pagefetcher* described in the design.
-Indeed, `webpage_fetch` enforces the 1-second delay for each fetch, so our crawler need not implement that part of the spec.
 
 ## Function prototypes
 
@@ -190,4 +189,5 @@ As a whole, the `indexer` has many parts working together. The program `indextes
 There is a script `testing.sh` that invokes the indexer several times, with a variety of command-line arguments. 
 First, a sequence of invocations with erroneous arguments, testing each of the possible mistakes that can be made for the indexer.
 Second, the three directories – letters, scrape, and wikipedia – are indexed and index tested. As previously described, the `indexcmp` is used to test the created index files. The letters test is run with valgrind to showcase propper memory allocation. The other tests are not, as their significantly larger size leads to quite slow performence with valgrind. 
-Third, a sequence of invocations with erroneous arguments, testing each of the possible mistakes that can be made for the indextest. These tests can be run with the command `make test`, and the output can be stored in `testing.out` with `make test &> testing.out`.
+Third, a sequence of invocations with erroneous arguments, testing each of the possible mistakes that can be made for the indextest. These tests can be run with the command `make test`, and the output can be stored in `testing.out` with `make test &> testing.out`. 
+Note, `testing.sh` uses a series of invalid argument checks to thoroughly test both `indexer` and `indextest`. The latter can only be tested once `indexer` has created index files to test against. As a result, the final section of `testing.sh` ends with invalid calls. This causes the output, as seen in `testing.out` to include a line "make: *** [Makefile:28: test] Error 1". This line is the natural result of the final invalid input test, and does not signify any errors with the program (rather that the program exited with an error due to the invalid command-line arguments). 
