@@ -16,14 +16,17 @@ INDEXTEST_OBJS = indextest.o ../common/pagedir.o ../common/index.o ../common/wor
 # Default target
 all: indexer indextest
 
-# build
+# build methods
+
+# indexer
 indexer: $(INDEXER_OBJS) $(LIBS)
 	$(CC) $(CFLAGS) $(INDEXER_OBJS) $(LIBS) -o indexer
 
+#indextest
 indextest: $(INDEXTEST_OBJS) $(LIBS)
 	$(CC) $(CFLAGS) $(INDEXTEST_OBJS) $(LIBS) -o indextest
 
-# test
+# test via testing.sh
 test: indexer indextest testing.sh
 	bash -v testing.sh
 
