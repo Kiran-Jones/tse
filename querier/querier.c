@@ -22,10 +22,10 @@ typedef struct andCoutners {
 } andCounters_t;
 
 
-typedef struct {
+typedef struct maxScore {
     int maxdocID;
     int maxCount;
-} max_data_t;
+} maxScore_t;
 
 static void parseArgs(int argc, char* argv[], char** pageDirectory, char** indexFilename);
 
@@ -53,18 +53,10 @@ static void printSequence(counters_t* sequence, char* pageDirectory);
 static void getSequenceSize(void* sequenceSize, const int docID, const int count);
 static void printSequenceHelper(void* pageDirectory, const int docID, const int count);
 
-static void rankSequence(counters_t* sequence);
+maxScore_t* rankSequence(counters_t* sequence);
 
 static void rankSequenceHelper(void* arg, const int docID, const int count);
 
-
-// static void handleQueries(char* pageDirectory, char* indexFilename);
-
-// static void parseQuery(char* query);
-
-// static void tokenizeQuery(char* query);
-
-// ./querier pageDirectory indexFilename
 int
 main(int argc, char* argv[]) 
 {
@@ -72,13 +64,15 @@ main(int argc, char* argv[])
     char* indexFilename = NULL;
     parseArgs(argc, argv, &pageDirectory, &indexFilename);
 
-    index_t* index = index_read(indexFilename);
     
     char* query = NULL;
     counters_t* sequence;
-    
+    index_t* index;
+
     while (getQuery(&query)) {
-    
+        
+        index = index_read(indexFilename);
+
         int wordCount = 0;
 
         char* words[strlen(query+1) / 2]; // max number of words occurs every word is one letter (50% letters, 50% spaces)
@@ -401,11 +395,26 @@ prompt(void)
 *           counters_set(counters1, docID, 0)
 * 
 */
+
+// should modify counters1
 static void 
-intersectCounters(counters_t* counters2, counters_t* counters1) 
+intersectCounters(counters_t* counters1, counters_t* counters2) 
 {
+    printf("intersecting counters\ncounters1: ");
+    counters_print(counters1, stdout);
+
+    printf("\ncounters2: ");
+    counters_print(counters2, stdout);
+
     counters_iterate(counters1, counters2, intersectCountersHelper);
     counters_iterate(counters2, counters1, intersectCountersHelper); // iterate over counters2
+
+    printf("\nintersected counters\ncounters1: ");
+    counters_print(counters1, stdout);
+
+    printf("\ncounters2: ");
+    counters_print(counters2, stdout);
+    printf("\n");
 
     // printf("printing...\n");
     // counters_print(counters1, stdout);
@@ -427,15 +436,16 @@ intersectCounters(counters_t* counters2, counters_t* counters1)
 }
 
 static void 
-intersectCountersHelper(void* counters1, const int docID, const int count)
+intersectCountersHelper(void* counters, const int docID, const int count)
 {
-    int counters1Count = counters_get((counters_t*)counters1, docID);
+    int counters1Count = counters_get((counters_t*)counters, docID);
     if ( counters1Count > 0) { // docID in counters2 and counters1
         if (counters1Count > count) { 
-            counters_set((counters_t*)counters1, docID, count);
+            counters_set((counters_t*)counters, docID, count);
         }
     } else {
-        counters_set((counters_t*)counters1, docID, 0);
+        // docID does not exist in counters, set to 0
+        counters_set((counters_t*)counters, docID, 0);
     }
 }
 
@@ -448,8 +458,7 @@ intersectCountersHelper(void* counters1, const int docID, const int count)
 */
 static void 
 unionCounters(counters_t* counters1, counters_t* counters2) 
-{
-    
+{   
     counters_iterate(counters2, counters1, unionCountersHelper);
 }
 
@@ -487,6 +496,10 @@ processQuery(char** words, int wordCount, index_t* index)
 
     for (int i = 0; i < wordCount; i++) {
 
+        printf("temp: ");
+        counters_print(temp, stdout);
+        printf("\n");
+
         char* currentWord = words[i];
 
         if (strcmp(currentWord, "and") == 0) {
@@ -505,12 +518,11 @@ processQuery(char** words, int wordCount, index_t* index)
            
         if (temp == NULL) { 
             temp = index_find(index, currentWord);
+            printf("new temp:");
+                counters_print(temp, stdout);
+                printf("\n");
         } else {
             currentCounters = index_find(index, currentWord);
-            if (currentCounters == NULL) {
-                fprintf(stderr, "Error finding currentCoutners\n");
-                exit(1);
-            }
             intersectCounters(temp, currentCounters);
         }
         // printf("temp when i=%d\n", i);
@@ -630,6 +642,7 @@ static void
 printSequence(counters_t* sequence, char* pageDirectory)
 {
     int sequenceSize = 0;
+    maxScore_t* max;
     counters_iterate(sequence, &sequenceSize, getSequenceSize);
 
     if (sequenceSize == 0) {
@@ -639,9 +652,17 @@ printSequence(counters_t* sequence, char* pageDirectory)
 
     printf("Matches %d documents (ranked):\n", sequenceSize);
 
-    //rankSequence(sequence);
+    for (int i = 0; i < sequenceSize; i++) {
+        max = rankSequence(sequence);
 
-    counters_iterate(sequence, pageDirectory, printSequenceHelper);
+        printSequenceHelper(pageDirectory, max->maxdocID, max->maxCount);
+        counters_set(sequence, max->maxdocID, 0);
+        free(max);
+    }
+
+
+
+    // counters_iterate(sequence, pageDirectory, printSequenceHelper);
     printf("-----------------------------------------------\n");
 }
 
@@ -656,7 +677,10 @@ getSequenceSize(void* sequenceSize, const int docID, const int count)
 static void
 printSequenceHelper(void* pageDirectory, const int docID, const int count)
 {
+    // pages with count 0 are "deleted", only consider positive docID
     if (count > 0) {
+
+        // convert int docID to char* charID
         char* charID = malloc(sizeof(int) + 1);
         sprintf(charID, "%d", docID);
 
@@ -690,20 +714,22 @@ printSequenceHelper(void* pageDirectory, const int docID, const int count)
 /*
 *  
 */
-static void 
+maxScore_t*
 rankSequence(counters_t* sequence)
 {
     // const int docID, const int count
-    max_data_t* max;
+    maxScore_t* max = malloc(sizeof(maxScore_t));
     max->maxCount = 0;
     max->maxdocID = 0;
     counters_iterate(sequence, max, rankSequenceHelper);
+    return max;
+
 }
 
 static void
 rankSequenceHelper(void* arg, const int docID, const int count)
 {
-    max_data_t* max = (max_data_t*)arg;
+    maxScore_t* max = (maxScore_t*) arg;
     if (count > max->maxCount) {
         max->maxCount = count;
         max->maxdocID = docID;
