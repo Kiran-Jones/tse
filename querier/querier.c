@@ -15,11 +15,11 @@
 #include "../common/word.h"
 #include "../libcs50/file.h"
 
-typedef struct andCoutners {
-    counters_t* counters1;
-    counters_t* counters2;
-    counters_t* countersIntersection;
-} andCounters_t;
+typedef struct queryCoutners {
+    counters_t* currentCoutners;
+    counters_t* temp;
+    counters_t* sequence; 
+} queryCounters_t;
 
 
 typedef struct maxScore {
@@ -67,11 +67,10 @@ main(int argc, char* argv[])
     
     char* query = NULL;
     counters_t* sequence;
-    index_t* index;
+    index_t* index = index_read(indexFilename);
 
     while (getQuery(&query)) {
-        
-        index = index_read(indexFilename);
+        index_t* index = index_read(indexFilename);
 
         int wordCount = 0;
 
@@ -88,6 +87,7 @@ main(int argc, char* argv[])
         printSequence(sequence, pageDirectory);
         counters_delete(sequence);
         free(query);
+        index_delete(index);
     }
     free(query);
     printf("\n");
@@ -482,6 +482,7 @@ unionCountersHelper(void* counters1, const int docID, const int count)
     //
     //  return result
 
+/*
 counters_t*
 processQuery(char** words, int wordCount, index_t* index)
 {
@@ -506,7 +507,7 @@ processQuery(char** words, int wordCount, index_t* index)
             continue;
         }
 
-        if (i > 1) {
+        if (i > 0) {
             if (strcmp(currentWord, "or") == 0) {
                 // printf("unioning\n");
                 unionCounters(sequence, temp);
@@ -523,6 +524,8 @@ processQuery(char** words, int wordCount, index_t* index)
                 printf("\n");
         } else {
             currentCounters = index_find(index, currentWord);
+            counters_print(temp, stdout);            
+            printf("\n\n%s\n\n", currentWord);
             intersectCounters(temp, currentCounters);
         }
         // printf("temp when i=%d\n", i);
@@ -533,109 +536,81 @@ processQuery(char** words, int wordCount, index_t* index)
     // free(temp);
     return sequence;
 }
-
-// counters_t*
-// processQuery(char** words, int wordCount, index_t* index)
-// {
-//     counters_t* sequence = counters_new();
-//     if (sequence == NULL) {
-//         fprintf(stderr, "Error creating sequence\n");
-//         exit(1);
-//     }
-
-//     bool lastDisjunction = false;
-//     counters_t* temp = index_find(index, words[0]);
-//     counters_t* currentCounters = NULL;
-
-//     for (int i = 1; i < wordCount; i++) {
-//         // printf("sequence when i=%d\n", i);
-//         // counters_print(sequence, stdout);
-//         // printf("\n");
-//         char* currentWord = words[i];
-
-//         if (strcmp(currentWord, "and") == 0) {
-//             continue;
-//         }
-    
-//         if (i > 1) {
-//             lastDisjunction = (strcmp(words[i-1], "or") == 0);
-//         }
-        
-
-//         if (lastDisjunction) {
-//             // printf("unioning\n");
-//             unionCounters(sequence, temp);
-//             temp = NULL;
-//         }
-
-//         if (temp == NULL) { 
-//             temp = index_find(index, currentWord);
-//         } else {
-//             currentCounters = index_find(index, currentWord);
-//             intersectCounters(temp, currentCounters);
-//         }
-//         // printf("temp when i=%d\n", i);
-//         // counters_print(sequence, stdout);
-//         // printf("\n");
-
-//     }
-//     unionCounters(sequence, temp);
-//     // free(temp);
-//     return sequence;
-// }
+*/
 
 
-// counters_t*
-// processQuery(char** words, int wordCount, index_t* index)
-// {
-//     counters_t* sequence = counters_new();
-//     if (sequence == NULL) {
-//         fprintf(stderr, "Error creating sequence\n");
-//         exit(1);
-//     }
+counters_t*
+processQuery(char** words, int wordCount, index_t* index)
+{
+    queryCounters_t* queryCounters = malloc(sizeof(queryCounters_t));
+    if (queryCounters == NULL) {
+        fprintf(stderr,"Error allocating space for queryCounters\n");
+        exit(1);
+    }
+    queryCounters->sequence = counters_new();
+    if (queryCounters->sequence == NULL) {
+        fprintf(stderr, "Error creating sequence\n");
+        exit(1);
+    }
+    queryCounters->temp = counters_new();
+     if (queryCounters->temp == NULL) {
+        fprintf(stderr, "Error creating temp\n");
+        exit(1);
+    }
+    queryCounters->currentCoutners = counters_new();
+    if (queryCounters->currentCoutners == NULL) {
+        fprintf(stderr, "Error creating currentCounters\n");
+        exit(1);
+    }
 
-//     bool lastDisjunction = false;
-//     counters_t* temp = NULL;
-//     counters_t* currentCounters = NULL;
+    for (int i = 0; i < wordCount; i++) {
 
-//     for (int i = 0; i < wordCount; i++) {
-//         // printf("sequence when i=%d\n", i);
-//         // counters_print(sequence, stdout);
-//         // printf("\n");
-//         char* currentWord = words[i];
+        printf("temp: ");
+        counters_print(queryCounters->temp, stdout);
+        printf("\n");
 
-//         // if (strcmp(currentWord, "and") == 0) {
-//         //     continue;
-//         // }
-    
-//         if (i > 1) {
-//             lastDisjunction = (strcmp(words[i-1], "or") == 0);
-//         }
-        
+        char* currentWord = words[i];
 
-//         if (lastDisjunction) {
-//             // printf("unioning\n");
-//             unionCounters(sequence, temp);
-//             temp = NULL;
-//         }
+        if (strcmp(currentWord, "and") == 0) {
+            continue;
+        }
 
-//         if (temp == NULL) { 
-//             temp = index_find(index, currentWord);
-//         } else {
-//             currentCounters = index_find(index, currentWord);
-//             intersectCounters(temp, currentCounters);
-//         }
+        if (i > 1) {
+            if (strcmp(currentWord, "or") == 0) {
+                // printf("unioning\n");
+                unionCounters(queryCounters->sequence, queryCounters->temp);
+                counters_delete(queryCounters->temp);
+                queryCounters->temp = counters_new();
+                if (queryCounters->temp == NULL) {
+                    fprintf(stderr, "Error creating temp\n");
+                    exit(1);
+                }
+                continue;
+            }
+        }
 
-//         // printf("temp when i=%d\n", i);
-//         // counters_print(sequence, stdout);
-//         // printf("\n");
+           
+        if (queryCounters->temp == NULL) { 
+            queryCounters->temp = index_find(index, currentWord);
 
-//     }
-//     unionCounters(sequence, temp);
-//     // free(temp);
-//     return sequence;
-// }
-
+            printf("new temp:");
+            counters_print(queryCounters->temp, stdout);
+            printf("\n");
+        } else {
+            queryCounters->currentCoutners = index_find(index, currentWord);
+            intersectCounters(queryCounters->temp, queryCounters->currentCoutners);
+            counters_delete(queryCounters->currentCoutners);
+            queryCounters->currentCoutners = counters_new();
+        }
+        // printf("temp when i=%d\n", i);
+        // counters_print(sequence, stdout);
+        // printf("\n");
+    }
+    unionCounters(queryCounters->sequence, queryCounters->temp);
+    counters_delete(queryCounters->temp);
+    counters_delete(queryCounters->currentCoutners);
+    return queryCounters->sequence;
+}
 
 
 static void
