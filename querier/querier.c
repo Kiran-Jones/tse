@@ -27,6 +27,7 @@ typedef struct maxScore {
     int maxCount;
 } maxScore_t;
 
+int main(int argc, char* argv[]);
 static void parseArgs(int argc, char* argv[], char** pageDirectory, char** indexFilename);
 
 static void prompt(void);
@@ -42,7 +43,9 @@ static void printCleanQuery(char** words, int wordCount);
 static void validateQuery(char** words, int wordCount);
 
 static void intersectCounters(counters_t* counters1, counters_t* counters2);
-static void intersectCountersHelper(void* counters1, const int docID, const int count);
+
+static void intersectLeft(void*, const int, const int);
+static void intersectRight(void*, const int, const int);
 
 static void unionCounters(counters_t* counters1, counters_t* counters2);
 static void unionCountersHelper(void* counters1, const int docID, const int count);
@@ -70,7 +73,7 @@ main(int argc, char* argv[])
     index_t* index = index_read(indexFilename);
 
     while (getQuery(&query)) {
-        index_t* index = index_read(indexFilename);
+        // index = index_read(indexFilename);
 
         int wordCount = 0;
 
@@ -87,8 +90,8 @@ main(int argc, char* argv[])
         printSequence(sequence, pageDirectory);
         counters_delete(sequence);
         free(query);
-        index_delete(index);
     }
+    index_delete(index);
     free(query);
     printf("\n");
 
@@ -163,7 +166,7 @@ main(int argc, char* argv[])
     *   
     * */
 
-    index_delete(index);
+    // index_delete(index);
 
     return 0;
 }
@@ -190,7 +193,7 @@ static void parseArgs(int argc, char* argv[], char** pageDirectory, char** index
     }
 
     if (!pagedir_validate(argv[1])) {
-        fprintf(stderr, "Error validating pageDirectory (argv1). The directory either does not exist, or is not crawler-produced.\n");
+        fprintf(stderr, "Error validating pageDirectory (argv1). The directory either does not exist, is not readable, or is not crawler-produced.\n");
         exit(1);
     }
 
@@ -300,8 +303,9 @@ validateQuery(char** words, int wordCount)
    
     bool prevLiteral = false;
 
-    for (int i = 0; i < wordCount - 1; i++) {
+    for (int i = 0; i < wordCount; i++) {
         
+        // ensure that two literals are not next to each other
         if (strcmp(words[i], "and") == 0 || strcmp(words[i], "or") == 0) {
             if (!prevLiteral) {
                 prevLiteral = true;
@@ -315,16 +319,7 @@ validateQuery(char** words, int wordCount)
         }
 
 
-
         /*
-        if (!prevLiteral) {
-            if (strcmp(words[i], "and") == 0 || strcmp(words[i], "or") == 0) {
-                prevLiteral = true;
-            }
-        } 
-        else {
-            
-        }
         // TODO: add more detailed logging to support messages
         // Error: 'and' and 'or' cannot be adjacent, Error: 'or' and 'or' cannot be adjacent, Error: 'and' and 'and' cannot be adjacent
         if (strcmp(words[i], "and") == 0 || strcmp(words[i], "or") == 0) {
@@ -333,16 +328,25 @@ validateQuery(char** words, int wordCount)
         }
         */
     
-
-        
-        
+    
+       // iterates through each chatacter in the current word, ensuring that is alphabetical (A-Z, a-z)
+       // could be more concise (e.g. exit upon first non-alphabetical character), but I found this detailed
+       // implementation to be more helpful for testing/code examination 
+        bool invalidInput = false;
         for (int j = 0; j < strlen(words[i]); j++) {
             if (!isalpha(words[i][j])) {
-                fprintf(stderr, "Error: bad character %c in query\n", words[i][j]);
-                exit(1);
+                if (invalidInput) {
+                    fprintf(stderr, ", %c", words[i][j]);
+                } else {
+                    fprintf(stderr, "Error: bad character(s): %c", words[i][j]);
+                    invalidInput = true;
+                }   
             }
         }
-        // printf("%s ", words[i]);
+        if (invalidInput) {
+            fprintf(stderr, " in query\n");
+            exit(1);
+        }
     }
 
     // check that the last word is not or/and
@@ -368,7 +372,7 @@ printCleanQuery(char** words, int wordCount)
 {
     // printf("wordCount: %d\n", wordCount);
     
-    printf("\nClean Query: ");
+    printf("Clean Query: ");
     for (int i = 0; i < wordCount; i++) {
         printf("%s ", words[i]);
     }
@@ -398,55 +402,77 @@ prompt(void)
 
 // should modify counters1
 static void 
-intersectCounters(counters_t* counters1, counters_t* counters2) 
+intersectCounters(counters_t* temp, counters_t* counter) 
 {
-    printf("intersecting counters\ncounters1: ");
-    counters_print(counters1, stdout);
-
-    printf("\ncounters2: ");
-    counters_print(counters2, stdout);
-
-    counters_iterate(counters1, counters2, intersectCountersHelper);
-    counters_iterate(counters2, counters1, intersectCountersHelper); // iterate over counters2
-
-    printf("\nintersected counters\ncounters1: ");
-    counters_print(counters1, stdout);
-
-    printf("\ncounters2: ");
-    counters_print(counters2, stdout);
-    printf("\n");
-
-    // printf("printing...\n");
+    // printf("intersecting counters\ncounters1: ");
     // counters_print(counters1, stdout);
-    // printf("\n");
-    // printf("\n");
+
+    // printf("\ncounters2: ");
     // counters_print(counters2, stdout);
-    // printf("\n");
-    // printf("\n");
 
-
-    // counters_print(counters1, stdout);
-    // printf("\n");
-    // printf("\n");
-    // counters_print(counters2, stdout);
-    // printf("\n");
-    // printf("\n");
-
+    counters_t* args[2] = {temp, counter};
+    //counters_print(temp, stdout);
+    // printf("\n\n");
+    //counters_print(counter, stdout);
+    //printf("\n\n");
+    counters_iterate(temp, args, intersectLeft);
+    //counters_print(temp, stdout);
+    //printf("\n\n");
+    //counters_print(counter, stdout);
+    //printf("\n\n");
+    counters_iterate(counter, args, intersectRight);
+    //counters_print(temp, stdout);
+    //printf("\n\n");
+    //counters_print(counter, stdout);
+    //printf("\n\n");
+    //counters_iterate(counter, temp, );
+    //counters_iterate(counters1, counters2, intersectCountersHelper);
+    //counters_iterate(counters2, counters1, intersectCountersHelper); // iterate over counters2
 
 }
 
-static void 
-intersectCountersHelper(void* counters, const int docID, const int count)
+static void
+intersectRight(void* args, const int docID, const int count) 
 {
-    int counters1Count = counters_get((counters_t*)counters, docID);
-    if ( counters1Count > 0) { // docID in counters2 and counters1
-        if (counters1Count > count) { 
-            counters_set((counters_t*)counters, docID, count);
-        }
+  counters_t **countersArray = (counters_t**)args;
+  counters_t *temp = countersArray[0];
+
+  int counterGot = counters_get(temp, docID);
+
+  if (counterGot < count) {
+    counters_set(temp, docID, counterGot);
+  } else {
+    counters_set(temp, docID, count);
+  }
+}
+
+static void 
+intersectLeft(void* args, const int docID, const int count)
+{
+    counters_t **countersArray = (counters_t**)args;
+    counters_t *temp = countersArray[0];
+    counters_t *counter = countersArray[1];
+
+    //Number of times word occured in docID in count
+    int counterGot = counters_get(counter, docID);
+
+    //min is counterGot
+    if (counterGot < count) {
+      counters_set(temp, docID, counterGot);
     } else {
-        // docID does not exist in counters, set to 0
-        counters_set((counters_t*)counters, docID, 0);
+      counters_set(temp, docID, count);
     }
+
+
+    //int counters1Count = counters_get((counters_t*)counters, docID);
+    //if ( counters1Count > 0) { // docID in counters2 and counters1
+    //    if (counters1Count > count) { 
+    //        counters_set((counters_t*)counters, docID, count);
+    //    }
+    //} else {
+    //    // docID does not exist in counters, set to 0
+    //    counters_set((counters_t*)counters, docID, 0);
+    //}
 }
 
 
@@ -482,7 +508,7 @@ unionCountersHelper(void* counters1, const int docID, const int count)
     //
     //  return result
 
-/*
+
 counters_t*
 processQuery(char** words, int wordCount, index_t* index)
 {
@@ -497,9 +523,9 @@ processQuery(char** words, int wordCount, index_t* index)
 
     for (int i = 0; i < wordCount; i++) {
 
-        printf("temp: ");
-        counters_print(temp, stdout);
-        printf("\n");
+        // printf("temp: ");
+        // counters_print(temp, stdout);
+        // printf("\n");
 
         char* currentWord = words[i];
 
@@ -509,36 +535,49 @@ processQuery(char** words, int wordCount, index_t* index)
 
         if (i > 0) {
             if (strcmp(currentWord, "or") == 0) {
-                // printf("unioning\n");
+                //printf("unioning\n");
                 unionCounters(sequence, temp);
+                counters_delete(temp);
                 temp = NULL;
                 continue;
             }
         }
+       /*
+        currentCounters = index_find(index, currentWord);
+        intersectCounters(temp, currentCounters);
+      */
 
-           
+      
         if (temp == NULL) { 
-            temp = index_find(index, currentWord);
-            printf("new temp:");
-                counters_print(temp, stdout);
-                printf("\n");
+          temp = counters_new();
+          currentCounters = index_find(index, currentWord);
+          unionCounters(temp, currentCounters);
+
+
+           // temp = index_find(index, currentWord);
+            // printf("new temp:");
+            //     counters_print(temp, stdout);
+            //     printf("\n");
         } else {
             currentCounters = index_find(index, currentWord);
-            counters_print(temp, stdout);            
-            printf("\n\n%s\n\n", currentWord);
+            // counters_print(temp, stdout);            
+            // printf("\n\n%s\n\n", currentWord);
             intersectCounters(temp, currentCounters);
         }
         // printf("temp when i=%d\n", i);
         // counters_print(sequence, stdout);
         // printf("\n");
+        //
+        //
     }
     unionCounters(sequence, temp);
+    counters_delete(temp);
     // free(temp);
     return sequence;
 }
-*/
 
 
+/*
 counters_t*
 processQuery(char** words, int wordCount, index_t* index)
 {
@@ -611,7 +650,7 @@ processQuery(char** words, int wordCount, index_t* index)
     counters_delete(queryCounters->currentCoutners);
     return queryCounters->sequence;
 }
-
+*/
 
 static void
 printSequence(counters_t* sequence, char* pageDirectory)
@@ -710,3 +749,13 @@ rankSequenceHelper(void* arg, const int docID, const int count)
         max->maxdocID = docID;
     }
 }
+
+
+/*
+counters_t*
+copyCounters(counters_t* counters)
+{
+  counters_iterate()
+
+}
+*/
