@@ -35,7 +35,7 @@ chmod -r ../data/testfiles/noread.index
 
 # 2. Erroneous query inputs for querier 
 
-# should print error message
+# all should print error messages
 echo "." | ./querier ../data/letters ../data/letters.index
 
 echo "and" | ./querier ../data/letters ../data/letters.index
@@ -74,10 +74,10 @@ echo "the and graph"| ./querier ../data/letters ../data/letters.index
 
 
 # 3. querier with fuzz testing
-# toscrape data
+# using toscrape data
 ../../../shared/tse/fuzzquery ../data/scrape.index 10 999 | ./querier ../data/scrape ../data/scrape.index
 
-# wiki data
+# using wiki data
 ../../../shared/tse/fuzzquery ../data/wiki.index 10 999 | ./querier ../data/wiki ../data/wiki.index
 
 # 4. querier with valgrind
@@ -86,7 +86,7 @@ valgrind --leak-check=full --show-leak-kinds=all echo "the"| ./querier ../data/l
 
 valgrind --leak-check=full --show-leak-kinds=all echo "tse"| ./querier ../data/letters ../data/letters.index
 
-# 5. querier with valgrind AND fuzz testing 
+# 5. querier with fuzz testing and valgrind 
 valgrind --leak-check=full --show-leak-kinds=all ../../../shared/tse/fuzzquery ../data/scrape.index 10 500 | ./querier ../data/scrape ../data/scrape.index
 
 
