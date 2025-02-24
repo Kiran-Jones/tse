@@ -18,7 +18,7 @@ all: querier
 querier: $(OBJS) $(LIBS)
 	$(CC) $(CFLAGS) $(OBJS) $(LIBS) -o querier
 
-# test
+# test make test &> testing.out
 test: querier testing.sh
 	bash -v testing.sh
 
