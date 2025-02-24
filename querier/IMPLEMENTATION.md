@@ -15,7 +15,7 @@ The querier is implemented in one file `querier.c`, with several functions. The 
 
 ### main
 
-The `main` function hanldes the logical flow of the querier, calling various functions to accept, clean, process, search, and print queries and their results. 
+The `main` function handles the logical flow of the querier, calling various functions to accept, clean, process, search, and print queries and their results. 
 
 It first calls `parseArgs` to ensure correct inputs. It then enters a loop, terminating when `getQuery` returns false (indicating user EOF input). It then calls `cleanQuery` and `validateQuery` to tidy up the query and to ensure propper formatting. It creates an array of `char*` pointers called *words*, with each index in *words* being a pointer to the start of a new word in the `char* query`. The cleaned query is printed using `printCleanQuery`, and `processQuery` is called to extract a `coutners_t* sequence` collection of docID, count pairs which satisfy the query. The sequence is printed using `printSequence`, and previously-allocated memory is freed. The program will then loop back to `getQuery`, and repeat until EOF is entered as input. Once this happens, the funciton returns 0. 
 
