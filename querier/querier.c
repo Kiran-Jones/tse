@@ -17,18 +17,13 @@
 #include "../common/word.h"
 #include "../libcs50/file.h"
 
-typedef struct queryCoutners {
-    counters_t* currentCoutners;
-    counters_t* temp;
-    counters_t* sequence; 
-} queryCounters_t;
-
-
+/***** Local struct used to sort sequence *****/
 typedef struct maxScore {
     int maxdocID;
     int maxCount;
 } maxScore_t;
 
+/*****    Funciton prototypes    *****/
 int main(int argc, char* argv[]);
 static void parseArgs(int argc, char* argv[], char** pageDirectory, char** indexFilename);
 static void prompt(void);
@@ -49,7 +44,6 @@ static void printSequenceHelper(void* pageDirectory, const int docID, const int 
 maxScore_t* rankSequence(counters_t* sequence);
 static void rankSequenceHelper(void* arg, const int docID, const int count);
 
-
 /*
 * Main function handling control flow of the querier 
 */
@@ -69,8 +63,10 @@ main(int argc, char* argv[])
 
     // create index from provided index file
     index_t* index = index_read(indexFilename);
+
+    // ensure index was created without problems
     if (index == NULL) {
-        fpritnf("Error creating index\n");
+        fprintf(stderr, "Error creating index\n");
         exit(1);
     }
 
@@ -146,6 +142,7 @@ static void parseArgs(int argc, char* argv[], char** pageDirectory, char** index
 
 /* 
 * Accept a query from the user
+* Note: used dynamic memory allocation to allow for strings of any length as opposed to getline or other methods which require a fixed buffer size
 */
 static bool
 getQuery(char** query)
