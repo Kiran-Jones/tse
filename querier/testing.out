@@ -134,7 +134,6 @@ score   1 doc 6: http://cs50tse.cs.dartmouth.edu/tse/letters/G.html
 echo "the graph"| ./querier ../data/letters ../data/letters.index
 Clean Query: the graph 
 No documents match.
-Matches 0 documents (ranked):
 -----------------------------------------------
 
 
@@ -142,7 +141,6 @@ Matches 0 documents (ranked):
 echo "the and graph"| ./querier ../data/letters ../data/letters.index
 Clean Query: the and graph 
 No documents match.
-Matches 0 documents (ranked):
 -----------------------------------------------
 
 
@@ -173,7 +171,6 @@ score   1 doc 264: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/until-
 -----------------------------------------------
 Clean Query: botille and secretly and fabled 
 No documents match.
-Matches 0 documents (ranked):
 -----------------------------------------------
 Clean Query: mariners 
 Matches 2 documents (ranked):
@@ -207,7 +204,6 @@ score   1 doc 576: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-ro
 -----------------------------------------------
 Clean Query: slogs saboteurs satisfy 
 No documents match.
-Matches 0 documents (ranked):
 -----------------------------------------------
 Clean Query: lone 
 Matches 2 documents (ranked):
@@ -216,7 +212,6 @@ score   2 doc 425: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/mr-mer
 -----------------------------------------------
 Clean Query: yadda echoes 
 No documents match.
-Matches 0 documents (ranked):
 -----------------------------------------------
 
 
@@ -245,7 +240,6 @@ score   2 doc 1662: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Gottfried_Leib
 -----------------------------------------------
 Clean Query: paxinos and avortons and arachne 
 No documents match.
-Matches 0 documents (ranked):
 -----------------------------------------------
 Clean Query: purple 
 Matches 33 documents (ranked):
@@ -298,7 +292,6 @@ score   1 doc 1634: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Folding%40home
 -----------------------------------------------
 Clean Query: slogs ncss arculator 
 No documents match.
-Matches 0 documents (ranked):
 -----------------------------------------------
 Clean Query: bestpricecomputers 
 Matches 1 documents (ranked):
@@ -306,84 +299,80 @@ score   1 doc 1545: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Software_devel
 -----------------------------------------------
 Clean Query: congresswoman fukuda 
 No documents match.
-Matches 0 documents (ranked):
 -----------------------------------------------
 
 
 # 4. querier with valgrind
 
 valgrind --leak-check=full --show-leak-kinds=all echo "the"| ./querier ../data/letters ../data/letters.index
-==1172902== Memcheck, a memory error detector
-==1172902== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
-==1172902== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
-==1172902== Command: echo the
-==1172902== 
+==189690== Memcheck, a memory error detector
+==189690== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==189690== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==189690== Command: echo the
+==189690== 
 Clean Query: the 
 Matches 2 documents (ranked):
 score   1 doc 1: http://cs50tse.cs.dartmouth.edu/tse/letters/
 score   1 doc 3: http://cs50tse.cs.dartmouth.edu/tse/letters/index.html
 -----------------------------------------------
 
-==1172902== 
-==1172902== HEAP SUMMARY:
-==1172902==     in use at exit: 0 bytes in 0 blocks
-==1172902==   total heap usage: 3 allocs, 3 frees, 4,140 bytes allocated
-==1172902== 
-==1172902== All heap blocks were freed -- no leaks are possible
-==1172902== 
-==1172902== For lists of detected and suppressed errors, rerun with: -s
-==1172902== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+==189690== 
+==189690== HEAP SUMMARY:
+==189690==     in use at exit: 0 bytes in 0 blocks
+==189690==   total heap usage: 3 allocs, 3 frees, 4,140 bytes allocated
+==189690== 
+==189690== All heap blocks were freed -- no leaks are possible
+==189690== 
+==189690== For lists of detected and suppressed errors, rerun with: -s
+==189690== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 
 valgrind --leak-check=full --show-leak-kinds=all echo "tse"| ./querier ../data/letters ../data/letters.index
-==1173009== Memcheck, a memory error detector
-==1173009== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
-==1173009== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
-==1173009== Command: echo tse
-==1173009== 
+==189701== Memcheck, a memory error detector
+==189701== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==189701== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==189701== Command: echo tse
+==189701== 
 Clean Query: tse 
 Matches 2 documents (ranked):
 score   1 doc 1: http://cs50tse.cs.dartmouth.edu/tse/letters/
 score   1 doc 3: http://cs50tse.cs.dartmouth.edu/tse/letters/index.html
 -----------------------------------------------
 
-==1173009== 
-==1173009== HEAP SUMMARY:
-==1173009==     in use at exit: 0 bytes in 0 blocks
-==1173009==   total heap usage: 3 allocs, 3 frees, 4,140 bytes allocated
-==1173009== 
-==1173009== All heap blocks were freed -- no leaks are possible
-==1173009== 
-==1173009== For lists of detected and suppressed errors, rerun with: -s
-==1173009== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+==189701== 
+==189701== HEAP SUMMARY:
+==189701==     in use at exit: 0 bytes in 0 blocks
+==189701==   total heap usage: 3 allocs, 3 frees, 4,140 bytes allocated
+==189701== 
+==189701== All heap blocks were freed -- no leaks are possible
+==189701== 
+==189701== For lists of detected and suppressed errors, rerun with: -s
+==189701== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 
 # 5. querier with fuzz testing and valgrind 
 valgrind --leak-check=full --show-leak-kinds=all ../../../shared/tse/fuzzquery ../data/scrape.index 10 500 | ./querier ../data/scrape ../data/scrape.index
-==1173296== Memcheck, a memory error detector
-==1173296== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
-==1173296== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
-==1173296== Command: ../../../shared/tse/fuzzquery ../data/scrape.index 10 500
-==1173296== 
+==189748== Memcheck, a memory error detector
+==189748== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==189748== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==189748== Command: ../../../shared/tse/fuzzquery ../data/scrape.index 10 500
+==189748== 
 ../../../shared/tse/fuzzquery: generating 10 queries from 13563 words
-==1173296== 
-==1173296== HEAP SUMMARY:
-==1173296==     in use at exit: 0 bytes in 0 blocks
-==1173296==   total heap usage: 448,183 allocs, 448,183 frees, 373,639,014 bytes allocated
-==1173296== 
-==1173296== All heap blocks were freed -- no leaks are possible
-==1173296== 
-==1173296== For lists of detected and suppressed errors, rerun with: -s
-==1173296== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+==189748== 
+==189748== HEAP SUMMARY:
+==189748==     in use at exit: 0 bytes in 0 blocks
+==189748==   total heap usage: 448,183 allocs, 448,183 frees, 373,639,014 bytes allocated
+==189748== 
+==189748== All heap blocks were freed -- no leaks are possible
+==189748== 
+==189748== For lists of detected and suppressed errors, rerun with: -s
+==189748== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 Clean Query: unavailable librarians and intuiting conceived noah 
 No documents match.
-Matches 0 documents (ranked):
 -----------------------------------------------
 Clean Query: keen joined and eyed 
 No documents match.
-Matches 0 documents (ranked):
 -----------------------------------------------
 Clean Query: overseas nicomachean labor 
 No documents match.
-Matches 0 documents (ranked):
 -----------------------------------------------
 Clean Query: dish creatorwhat hour hinted or innovate 
 Matches 1 documents (ranked):
@@ -397,7 +386,6 @@ score   1 doc 444: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-ed
 -----------------------------------------------
 Clean Query: locals bella 
 No documents match.
-Matches 0 documents (ranked):
 -----------------------------------------------
 Clean Query: spends 
 Matches 6 documents (ranked):
@@ -415,11 +403,9 @@ score   1 doc 464: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-pe
 -----------------------------------------------
 Clean Query: inspiration mestories 
 No documents match.
-Matches 0 documents (ranked):
 -----------------------------------------------
 Clean Query: scrimshawing 
 No documents match.
-Matches 0 documents (ranked):
 -----------------------------------------------
 
 
