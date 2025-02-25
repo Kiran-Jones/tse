@@ -44,6 +44,7 @@ static void printSequenceHelper(void* pageDirectory, const int docID, const int 
 maxScore_t* rankSequence(counters_t* sequence);
 static void rankSequenceHelper(void* arg, const int docID, const int count);
 
+
 /*
 * Main function handling control flow of the querier 
 */
@@ -72,6 +73,9 @@ main(int argc, char* argv[])
 
     // iterate until user enters EOF
     while (getQuery(&query)) {
+    // size_t len = 0;
+    // ssize_t read;
+    // while ((read = getline(&query, &len, stdin)) != -1) {
 
         int wordCount = 0;
         // max number of words occurs if every word is one letter (50% letters, 50% spaces)
@@ -101,6 +105,7 @@ main(int argc, char* argv[])
 
     return 0;
 }
+
 
 /*
 * Validate command-line arguments
@@ -139,6 +144,7 @@ static void parseArgs(int argc, char* argv[], char** pageDirectory, char** index
 
     *indexFilename = argv[2];
 }
+
 
 /* 
 * Accept a query from the user
@@ -195,6 +201,7 @@ getQuery(char** query)
     return true;
 }
 
+
 /*
 * "Cleans" the query, normalizing all characters and creating words
 * Words is a array of char* pointers, containing pointers to the start of each word in the char* query
@@ -248,7 +255,6 @@ validateQuery(char** words, int wordCount)
         exit(1);
     }
 
-   
     bool prevLiteral = false;
 
     for (int i = 0; i < wordCount; i++) {
@@ -329,7 +335,6 @@ prompt(void)
 }
 
 
-
 /*
 * Perform in-place intersection of two counters, storing the result in the first
 */
@@ -341,6 +346,7 @@ intersectCounters(counters_t* temp, counters_t* currentCounters)
     counters_iterate(temp, args, intersectLeft);
     counters_iterate(currentCounters, args, intersectRight);
 }
+
 
 /*
 * Iterate over currentCounters, storing the lower count associated with each docID in temp 
@@ -360,6 +366,7 @@ intersectRight(void* args, const int docID, const int count)
     counters_set(temp, docID, count);
   }
 }
+
 
 /*
 * Iterate over temp, storing the lower count associated with each docID in temp
@@ -403,19 +410,14 @@ unionCountersHelper(void* temp, const int docID, const int count)
 }
 
 
- //  while have words to process: // loop over char* words[] 
-    //    
-    //    if last operation was OR: // boolean
-    //      result = result union temp // union function
-    //
-    //    if temp is empty: // accumulate 
-    //      temp = currentFile
-    //    else:
-    //      temp = temp intersect currentFile // intersect function. intersects counters to counters 
-    //
-    //  return result
-
-
+/*
+* Finds all documents matching the cleaned query
+* Returns a counters object with each matching docID-count pair
+* Returned counters typically contains docIDs which do not match the query with count 0
+* These are esentially "deleted" and are ignored for all future use
+* 
+* Uses "accumulation" to find all matching documents similar to the design suggested in the Requirements spec
+*/
 counters_t*
 processQuery(char** words, int wordCount, index_t* index)
 {
@@ -566,7 +568,6 @@ printSequenceHelper(void* pageDirectory, const int docID, const int count)
         free(pathName);
     }
 }
-
 
 
 /*
