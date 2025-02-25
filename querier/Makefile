@@ -25,5 +25,6 @@ test: querier testing.sh
 # clean
 clean:
 	rm -f $(OBJS) querier
+	rm -f testing.out
 
 
