@@ -15,12 +15,25 @@ The querier is implemented in one file `querier.c`, with several functions. The 
 
 ### main
 
+```c
+int main(int argc, char* argv[]);
+static void parseArgs(int argc, char* argv[], char** pageDirectory, char** indexFilename);
+```
+
 The `main` function handles the logical flow of the querier, calling various functions to accept, clean, process, search, and print queries and their results. 
 
 It first calls `parseArgs` to ensure correct inputs. It then enters a loop, terminating only when `getQuery` returns false (indicating user EOF input). After accepting a query, it calls `cleanQuery` and `validateQuery` to tidy up the query and to ensure propper formatting. It creates an array of `char*` pointers called *words*, with each index in *words* being a pointer to the start of a new word in the `char* query`. The cleaned query is printed using `printCleanQuery`, and `processQuery` is called to extract a `coutners_t* sequence` collection of docID, count pairs which satisfy the query. The sequence is printed using `printSequence`, and previously-allocated memory is freed. The program will then loop back to `getQuery`, and repeat until EOF is entered as input. Once this happens, the function returns 0. 
 
 
 ## Query processing
+
+```c
+static bool getQuery(char** query);
+static void cleanQuery(char* query, char** words, int* wordCount);
+static void printCleanQuery(char** words, int wordCount); 
+static void validateQuery(char** words, int wordCount);
+counters_t* processQuery(char** words, int wordCount, index_t* index);
+```
 
 The querier supports the full functionality outlined in the project description, that is precedence of *and* over *or* and printing by decreasing score. To acomplish this, the querier makes use of two main helper functions: `intersectCounters` and `unionCounters`. These operations implement the logic for *and* and *or* operations, respectively. 
 
@@ -32,47 +45,49 @@ The last counters is *currentCounters* and represents the documents associated w
 
 ## intersectCounters
 
+```c
+static void intersectCounters(counters_t* temp, counters_t* counter);
+static void intersectLeft(void* args, const int docID, const int count);
+static void intersectRight(void* args, const int docID, const int count);
+```
+
 This function takes two `counters_t*` objects. It performs an intersection *in place* on the first argument. Using the previously outlined counters, *temp* is always the first argument and *currentCounters* is the second. Two helper functions, `intersectLeft` and `intersectRight` are used to perform the intersection. The function passes an array of containing both *temp* and *currentCounters* to each intersect function. This structure allows us to overcome the limitation of not being able to simultaneously iterate over and modify a single counter. The two helper functions act primarily the same, the only difference being editing "left" counter vs. the "right" counter: cooresponding to where *temp* was passed in. Each iterates over a counter, and sets the value of the docID in temp to the minimum value associated with the docID in two counters. 
 
 ## unionCounters
 
-This function also accepts two `counters_t*` objects and performs an *in place* union. Like `intersectCounters`, the result of the operation is stored in the first argument, e.g. *temp*. It calls *unionCountersHelper*, which sets the value of each docID in *currentCounters* to be the sum of its value in *currentCounters* and *temp*.
-
-## rankSequence
-
-The querier also supports sequence ranking. This is done through the function `rankSequence`. This implements a selection sort algorithm, iterating over the compiled *sequence* of matching documents and selecting the largest count. This largest count is then printed, and then set to 0. This process repeats for all entries in *sequence*. As a note, the counters data structure does not support deleting individual count-value pairs, so setting the count to 0 signifies that the entry is "deleted" and it is then ignored. This algorithm is not particularly efficient – O(n^2) runtime – however, our *sequence* counters is generally relatively small making this a nonissue given the current size of the pageDirectories and index files. If this were to be used with a larger and a search returned many results, this could hurt performance. 
-
-## Function prototypes
-
-### querier
 ```c
-int main(int argc, char* argv[]);
-
-static void parseArgs(int argc, char* argv[], char** pageDirectory, char** indexFilename);
-
-static void prompt(void);
-int fileno(FILE *stream);
-static bool getQuery(char** query);
-static void cleanQuery(char* query, char** words, int* wordCount);
-static void printCleanQuery(char** words, int wordCount); 
-static void validateQuery(char** words, int wordCount);
-
-static void intersectCounters(counters_t* temp, counters_t* counter);
-static void intersectLeft(void* args, const int docID, const int count);
-static void intersectRight(void* args, const int docID, const int count);
-
 static void unionCounters(counters_t* counters1, counters_t* counters2);
 static void unionCountersHelper(void* counters1, const int docID, const int count);
+```
 
-counters_t* processQuery(char** words, int wordCount, index_t* index);
+This function also accepts two `counters_t*` objects and performs an *in place* union. Like `intersectCounters`, the result of the operation is stored in the first argument, e.g. *temp*. It calls *unionCountersHelper*, which sets the value of each docID in *currentCounters* to be the sum of its value in *currentCounters* and *temp*.
 
+## printSequence
+
+```c
 static void printSequence(counters_t* sequence, char* pageDirectory);
 static void getSequenceSize(void* sequenceSize, const int docID, const int count);
 static void printSequenceHelper(void* pageDirectory, const int docID, const int count);
+```
+The querier uses several functions to print the *sequence* of matching documents. One master function, `printSequence` implements the core logic of printing. It first calls `getSequenceSize` to obtain the size of the *sequence* (i.e. the number of docIDs with a count greater than 0). The function then calculates the document with the highest score using `rankSequence` and `rankSequenceHelper` – see below for more detail on the implementation of these – and prints it using `printSequenceHelper`. The count of the printed docID (the previous highest count) is set to 0, and the iteration continues until all positive docID-count pairs have been printed. 
 
+## rankSequence
+
+```c
 maxScore_t* rankSequence(counters_t* sequence);
 static void rankSequenceHelper(void* arg, const int docID, const int count);
 ```
+
+The querier also supports sequence ranking. This is done through the function `rankSequence`. This implements a selection sort algorithm, iterating over the compiled *sequence* of matching documents and selecting the largest count. This largest count is then printed, and then set to 0. This process repeats for all entries in *sequence*. As a note, the counters data structure does not support deleting individual count-value pairs, so setting the count to 0 signifies that the entry is "deleted" and it is then ignored. This algorithm is not particularly efficient – O(n^2) runtime – however, our *sequence* counters is generally relatively small making this a nonissue given the current size of the pageDirectories and index files. If this were to be used with a larger and a search returned many results, this could hurt performance. 
+
+
+### prompt
+
+```c
+static void prompt(void);
+int fileno(FILE *stream);
+```
+These functions are for user/testing convinence. `prompt` calls `fileno` – included in *stdio.h* to determine if the user is a terminal. If so, it prints "Query? ", prompting the user for a query. This is useful as it is not triggered when testing, making the output of *testing.out* cleaner. 
 
 ## Error handling and recovery
 

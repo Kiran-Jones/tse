@@ -5,7 +5,7 @@ The querier takes three arguments – `querier pageDirectory indexFilename`. The
 
 
 ## Assumptions
-There were no assumptions other than those outlined in the assignment directions taken with the design of indexer. The program performs basic valid input checks for the command line arguments, and exits with an error if there were problems. Upon a non-recoverable failure, the program prints a unique note to stderr and exits. The program assumes that `pageDirectory` and `indexFilename` were created using the `crawler` and `indexer` modules, respectivly. The querier does not perform extensive checking of these file contents beyond verifying basic access permissions. This assumption matches the specification outlined in the Requirements Spec. 
+There were no assumptions other than those outlined in the assignment directions. The program performs basic valid input checks for the command line arguments, and exits with an error if there were problems. Upon a non-recoverable failure, the program prints a unique note to stderr and exits. The program assumes that `pageDirectory` and `indexFilename` were created using the `crawler` and `indexer` modules, respectivly. The querier does not perform extensive checking of these file contents beyond verifying basic access permissions. This assumption matches the specification outlined in the Requirements Spec. 
 
 
 ## Complilation and Testing
