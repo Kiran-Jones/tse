@@ -13,7 +13,7 @@ Indexes a collection of crawler-produced webpages to create an inverted-index fi
 Accepts a user query and uses the index file and crawler-produced files to return a ranked set of matching pages. Visit the querier subdirectory for more information. 
 
 ## Functionality
-This program supports the full functionality as outlined in each module's specs. More specific information on assumptions can be found in each sub-directory. 
+This program supports the full functionality as outlined in each module's specs. More specific information on assumptions can be found in each subdirectory. 
 
 
 
