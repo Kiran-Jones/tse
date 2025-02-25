@@ -51,7 +51,6 @@ The Querier will run as follows:
      parse the command line, validate parameters, initialize other modules
      while there is a query to process
        store the query
-       create a new 'index' object
        clean the query
        validate the query
        print the cleaned query
