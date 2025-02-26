@@ -94,7 +94,7 @@ The querier also supports sequence ranking. This is done through the function `r
 static void prompt(void);
 int fileno(FILE *stream);
 ```
-These functions are for user/testing convinence. `prompt` calls `fileno` – included in *stdio.h* to determine if the user is a terminal. If so, it prints "Query? ", prompting the user for a query. This is useful as it is not triggered when testing, making the output of *testing.out* cleaner. 
+These functions are for user/testing convinence. `prompt` calls `fileno` – included in *stdio.h* to determine if the user is a terminal. If so, it prints "Query? ", prompting the user for a query. This is useful as it is not triggered when testing, making the output of *testing.out* cleaner. Both of these functions make use of the optional prompt note located in the project specs.  
 
 ## Error handling and recovery
 
