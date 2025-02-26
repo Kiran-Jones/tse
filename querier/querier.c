@@ -599,3 +599,4 @@ rankSequenceHelper(void* arg, const int docID, const int count)
         max->maxdocID = docID;
     }
 }
+
