@@ -1,0 +1,412 @@
+gcc -Wall -pedantic -std=c11 -ggdb  -IIBS querier.o ../common/pagedir.o ../common/index.o ../common/word.o ../libcs50/libcs50-given.a ../common/common.a -o querier
+bash -v testing.sh
+module () {  local _mlredir=1;
+ if [ -n "${MODULES_REDIRECT_OUTPUT+x}" ]; then
+ if [ "$MODULES_REDIRECT_OUTPUT" = '0' ]; then
+ _mlredir=0;
+ else
+ if [ "$MODULES_REDIRECT_OUTPUT" = '1' ]; then
+ _mlredir=1;
+ fi;
+ fi;
+ fi;
+ case " $@ " in 
+ *' --no-redirect '*)
+ _mlredir=0
+ ;;
+ *' --redirect '*)
+ _mlredir=1
+ ;;
+ esac;
+ if [ $_mlredir -eq 0 ]; then
+ _module_raw "$@";
+ else
+ _module_raw "$@" 2>&1;
+ fi
+}
+ml () {  module ml "$@"
+}
+_module_raw () {  eval "$(/usr/bin/tclsh8.6 '/usr/lib/x86_64-linux-gnu/modulecmd.tcl' bash "$@")";
+ _mlstatus=$?;
+ return $_mlstatus
+}
+# 0. Setup 
+# create directory for files to test permissions
+mkdir -p ../data/testfiles
+
+# create non-readable pageDirectory 
+touch ../data/testfiles/noreaddirectory
+# removes read permissions
+chmod -r ../data/testfiles/noreaddirectory
+
+# create non-readable index file 
+touch ../data/testfiles/noread.index
+# removes read permissions
+chmod -r ../data/testfiles/noread.index
+
+
+# 1. Erroneous command line arguments for querier
+
+# too few arguments (1)
+./querier
+No arguments were given. The correct format is: querier pageDirectory indexFilename
+
+# too many arguments (6)
+./querier ../data/letters ../data/letters.index extraArg1 extraArg2 extraArg3
+Too many arguments were given. The correct format is: querier pageDirectory indexFilename
+
+# bad pageDirectory
+./querier iufhkcsjdns ../data/letters.index
+Error validating pageDirectory (argv1). The directory either does not exist, is not readable, or is not crawler-produced.
+
+# non crawler-produced pageDirectory
+./querier ../data ..data/letters.index
+Error validating pageDirectory (argv1). The directory either does not exist, is not readable, or is not crawler-produced.
+
+# non-readable pageDirectory
+./querier ../data/testfiles/noreaddirectory ../data/letters.index
+Error validating pageDirectory (argv1). The directory either does not exist, is not readable, or is not crawler-produced.
+
+# non-readable index file
+./querier ../data/letters ../data/testfiles/noread.index
+Provided indexFilename is not a valid file or does not have read permissions (argv2).
+
+# 2. Erroneous query inputs for querier 
+
+# all should print error messages
+echo "." | ./querier ../data/letters ../data/letters.index
+Error: bad character(s): . in query
+
+echo "and" | ./querier ../data/letters ../data/letters.index
+Error: 'and' cannot be first
+
+echo "or" | ./querier ../data/letters ../data/letters.index
+Error: 'or' cannot be first
+
+echo "page and coding or"| ./querier ../data/letters ../data/letters.index
+Error: 'or' cannot be last
+
+echo "page and and coding"| ./querier ../data/letters ../data/letters.index
+Error: cannot have literals adjacent
+
+echo "page and or coding"| ./querier ../data/letters ../data/letters.index
+Error: cannot have literals adjacent
+
+echo "page?"| ./querier ../data/letters ../data/letters.index
+Error: bad character(s): ? in query
+
+echo "coding!"| ./querier ../data/letters ../data/letters.index
+Error: bad character(s): ! in query
+
+echo "123"| ./querier ../data/letters ../data/letters.index
+Error: bad character(s): 1, 2, 3 in query
+
+
+# 2. querier with sample text 
+# should return docIDs 1 & 3 with scores 1 & 1
+echo "the"| ./querier ../data/letters ../data/letters.index
+Clean Query: the 
+Matches 2 documents (ranked):
+score   1 doc 1: http://cs50tse.cs.dartmouth.edu/tse/letters/
+score   1 doc 3: http://cs50tse.cs.dartmouth.edu/tse/letters/index.html
+-----------------------------------------------
+
+
+# should return docID 6 with score 1
+echo "graph"| ./querier ../data/letters ../data/letters.index
+Clean Query: graph 
+Matches 1 documents (ranked):
+score   1 doc 6: http://cs50tse.cs.dartmouth.edu/tse/letters/G.html
+-----------------------------------------------
+
+
+# should return a combination of the previous two 
+echo "the or graph"| ./querier ../data/letters ../data/letters.index
+Clean Query: the or graph 
+Matches 3 documents (ranked):
+score   1 doc 1: http://cs50tse.cs.dartmouth.edu/tse/letters/
+score   1 doc 3: http://cs50tse.cs.dartmouth.edu/tse/letters/index.html
+score   1 doc 6: http://cs50tse.cs.dartmouth.edu/tse/letters/G.html
+-----------------------------------------------
+
+
+# should return no docIDs
+echo "the graph"| ./querier ../data/letters ../data/letters.index
+Clean Query: the graph 
+No documents match.
+-----------------------------------------------
+
+
+# should behave the same as the last test
+echo "the and graph"| ./querier ../data/letters ../data/letters.index
+Clean Query: the and graph 
+No documents match.
+-----------------------------------------------
+
+
+
+
+# 3. querier with fuzz testing
+# using toscrape data
+../../../shared/tse/fuzzquery ../data/scrape.index 10 999 | ./querier ../data/scrape ../data/scrape.index
+../../../shared/tse/fuzzquery: generating 10 queries from 13563 words
+Clean Query: lottery 
+Matches 3 documents (ranked):
+score   2 doc 110: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/born-for-this-how-to-find-the-work-you-were-meant-to-do_588/index.html
+score   2 doc 515: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/danganronpa-volume-1_889/index.html
+score   1 doc 443: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/bridget-joness-diary-bridget-jones-1_10/index.html
+-----------------------------------------------
+Clean Query: pivotal 
+Matches 1 documents (ranked):
+score   1 doc 104: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/louisa-the-extraordinary-life-of-mrs-adams_818/index.html
+-----------------------------------------------
+Clean Query: smash coterie bloods excels or institutionalized 
+Matches 1 documents (ranked):
+score   1 doc 353: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-psychopath-test-a-journey-through-the-madness-industry_857/index.html
+-----------------------------------------------
+Clean Query: fractured 
+Matches 2 documents (ranked):
+score   2 doc 469: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/take-me-home-tonight-rock-star-romance-3_605/index.html
+score   1 doc 264: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/until-friday-night-the-field-party-1_775/index.html
+-----------------------------------------------
+Clean Query: botille and secretly and fabled 
+No documents match.
+-----------------------------------------------
+Clean Query: mariners 
+Matches 2 documents (ranked):
+score   4 doc 150: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-mathews-men-seven-brothers-and-the-war-against-hitlers-u-boats_408/index.html
+score   1 doc 155: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/brilliant-beacons-a-history-of-the-american-lighthouse_515/index.html
+-----------------------------------------------
+Clean Query: hrer and mermaid or softness explores or decades 
+Matches 22 documents (ranked):
+score   3 doc 384: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/reskilling-america-learning-to-labor-in-the-twenty-first-century_922/index.html
+score   2 doc 357: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/a-piece-of-sky-a-grain-of-rice-a-memoir-in-four-meditations_878/index.html
+score   2 doc 96: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-14th-colony-cotton-malone-11_744/index.html
+score   2 doc 148: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/americas-war-for-the-greater-middle-east-a-military-history_361/index.html
+score   2 doc 212: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-golden-condom-and-other-essays-on-love-lost-and-found_637/index.html
+score   2 doc 286: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/searching-for-meaning-in-gailana_648/index.html
+score   2 doc 315: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-immortal-life-of-henrietta-lacks_753/index.html
+score   2 doc 318: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/modern-romance_820/index.html
+score   2 doc 338: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/ready-player-one_209/index.html
+score   2 doc 434: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/finders-keepers-bill-hodges-trilogy-2_807/index.html
+score   2 doc 538: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/voyager-outlander-3_299/index.html
+score   2 doc 544: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/lilac-girls_597/index.html
+score   1 doc 40: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/sapiens-a-brief-history-of-humankind_996/index.html
+score   1 doc 158: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/zealot-the-life-and-times-of-jesus-of-nazareth_785/index.html
+score   1 doc 116: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-third-wave-an-entrepreneurs-vision-of-the-future_862/index.html
+score   1 doc 175: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/psycho-sanitarium-psycho-15_628/index.html
+score   1 doc 176: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/doctor-sleep-the-shining-2_686/index.html
+score   1 doc 333: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-last-girl-the-dominion-trilogy-1_70/index.html
+score   1 doc 365: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/life_104/index.html
+score   1 doc 380: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/algorithms-to-live-by-the-computer-science-of-human-decisions_880/index.html
+score   1 doc 465: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/a-girls-guide-to-moving-on-new-beginnings-2_359/index.html
+score   1 doc 576: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-road-to-little-dribbling-adventures-of-an-american-in-britain-notes-from-a-small-island-2_277/index.html
+-----------------------------------------------
+Clean Query: slogs saboteurs satisfy 
+No documents match.
+-----------------------------------------------
+Clean Query: lone 
+Matches 2 documents (ranked):
+score   2 doc 321: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/on-a-midnight-clear_912/index.html
+score   2 doc 425: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/mr-mercedes-bill-hodges-trilogy-1_717/index.html
+-----------------------------------------------
+Clean Query: yadda echoes 
+No documents match.
+-----------------------------------------------
+
+
+# using wiki data
+../../../shared/tse/fuzzquery ../data/wiki.index 10 999 | ./querier ../data/wiki ../data/wiki.index
+../../../shared/tse/fuzzquery: generating 10 queries from 101588 words
+Clean Query: schaub 
+Matches 1 documents (ranked):
+score   1 doc 486: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/The_Dartmouth_Review.html
+-----------------------------------------------
+Clean Query: coset 
+Matches 1 documents (ranked):
+score   1 doc 1574: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Coding_theory.html
+-----------------------------------------------
+Clean Query: icloud alutiiq bloods bicategories or pierson 
+Matches 4 documents (ranked):
+score   1 doc 252: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/The_College_of_William_%26_Mary.html
+score   1 doc 274: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Yale_Bulldogs.html
+score   1 doc 355: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/24_(TV_series).html
+score   1 doc 1040: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Kernel_(computing).html
+-----------------------------------------------
+Clean Query: confessio 
+Matches 2 documents (ranked):
+score   2 doc 1515: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Leibniz.html
+score   2 doc 1662: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Gottfried_Leibniz.html
+-----------------------------------------------
+Clean Query: paxinos and avortons and arachne 
+No documents match.
+-----------------------------------------------
+Clean Query: purple 
+Matches 33 documents (ranked):
+score   15 doc 260: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/College_of_the_Holy_Cross.html
+score   14 doc 253: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Williams_College.html
+score   5 doc 271: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Holy_Cross_Crusaders.html
+score   5 doc 605: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Dartmouth_green.html
+score   2 doc 263: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Amherst_College.html
+score   2 doc 477: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Yahoo%21.html
+score   2 doc 522: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/New_England.html
+score   2 doc 577: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/King_George_III.html
+score   2 doc 580: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/George_III_of_the_United_Kingdom.html
+score   2 doc 851: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/License_plate.html
+score   2 doc 1645: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Enigma_machine.html
+score   1 doc 248: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Quinnipiac_Bobcats.html
+score   1 doc 249: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Colgate_Raiders.html
+score   1 doc 254: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Wellesley_College.html
+score   1 doc 266: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Syracuse_Orange.html
+score   1 doc 278: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Cornell_Big_Red.html
+score   1 doc 279: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Columbia_Lions.html
+score   1 doc 355: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/24_(TV_series).html
+score   1 doc 376: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Academy_Award.html
+score   1 doc 449: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/United_States_House_of_Representatives.html
+score   1 doc 450: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/United_States_Senate.html
+score   1 doc 452: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Vice_President_of_the_United_States.html
+score   1 doc 520: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Pine.html
+score   1 doc 528: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Dartmouth_BASIC.html
+score   1 doc 540: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/London_School_of_Economics.html
+score   1 doc 571: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Supreme_Court_of_the_United_States.html
+score   1 doc 574: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Cricket.html
+score   1 doc 608: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/United_States.html
+score   1 doc 609: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/New_Hampshire.html
+score   1 doc 970: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Sun_Microsystems.html
+score   1 doc 1438: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Petroleum_engineering.html
+score   1 doc 1602: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Slavic_languages.html
+score   1 doc 1637: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Cryptanalysis_of_the_Enigma.html
+-----------------------------------------------
+Clean Query: assertibility and lash or softness univision or stefano 
+Matches 10 documents (ranked):
+score   5 doc 901: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Debian.html
+score   1 doc 308: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Fox_News.html
+score   1 doc 112: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/UNESCO.html
+score   1 doc 336: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/2005_World_Championships_in_Athletics.html
+score   1 doc 337: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/2004_Athens_Olympics.html
+score   1 doc 995: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Internet.html
+score   1 doc 1469: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Expert_system.html
+score   1 doc 1530: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Ubiquitous_computing.html
+score   1 doc 1633: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Protein_folding.html
+score   1 doc 1634: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Folding%40home.html
+-----------------------------------------------
+Clean Query: slogs ncss arculator 
+No documents match.
+-----------------------------------------------
+Clean Query: bestpricecomputers 
+Matches 1 documents (ranked):
+score   1 doc 1545: http://cs50tse.cs.dartmouth.edu/tse/wikipedia/Software_development.html
+-----------------------------------------------
+Clean Query: congresswoman fukuda 
+No documents match.
+-----------------------------------------------
+
+
+# 4. querier with valgrind
+
+valgrind --leak-check=full --show-leak-kinds=all echo "the"| ./querier ../data/letters ../data/letters.index
+==189690== Memcheck, a memory error detector
+==189690== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==189690== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==189690== Command: echo the
+==189690== 
+Clean Query: the 
+Matches 2 documents (ranked):
+score   1 doc 1: http://cs50tse.cs.dartmouth.edu/tse/letters/
+score   1 doc 3: http://cs50tse.cs.dartmouth.edu/tse/letters/index.html
+-----------------------------------------------
+
+==189690== 
+==189690== HEAP SUMMARY:
+==189690==     in use at exit: 0 bytes in 0 blocks
+==189690==   total heap usage: 3 allocs, 3 frees, 4,140 bytes allocated
+==189690== 
+==189690== All heap blocks were freed -- no leaks are possible
+==189690== 
+==189690== For lists of detected and suppressed errors, rerun with: -s
+==189690== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
+valgrind --leak-check=full --show-leak-kinds=all echo "tse"| ./querier ../data/letters ../data/letters.index
+==189701== Memcheck, a memory error detector
+==189701== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==189701== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==189701== Command: echo tse
+==189701== 
+Clean Query: tse 
+Matches 2 documents (ranked):
+score   1 doc 1: http://cs50tse.cs.dartmouth.edu/tse/letters/
+score   1 doc 3: http://cs50tse.cs.dartmouth.edu/tse/letters/index.html
+-----------------------------------------------
+
+==189701== 
+==189701== HEAP SUMMARY:
+==189701==     in use at exit: 0 bytes in 0 blocks
+==189701==   total heap usage: 3 allocs, 3 frees, 4,140 bytes allocated
+==189701== 
+==189701== All heap blocks were freed -- no leaks are possible
+==189701== 
+==189701== For lists of detected and suppressed errors, rerun with: -s
+==189701== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+
+# 5. querier with fuzz testing and valgrind 
+valgrind --leak-check=full --show-leak-kinds=all ../../../shared/tse/fuzzquery ../data/scrape.index 10 500 | ./querier ../data/scrape ../data/scrape.index
+==189748== Memcheck, a memory error detector
+==189748== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==189748== Using Valgrind-3.22.0 and LibVEX; rerun with -h for copyright info
+==189748== Command: ../../../shared/tse/fuzzquery ../data/scrape.index 10 500
+==189748== 
+../../../shared/tse/fuzzquery: generating 10 queries from 13563 words
+==189748== 
+==189748== HEAP SUMMARY:
+==189748==     in use at exit: 0 bytes in 0 blocks
+==189748==   total heap usage: 448,183 allocs, 448,183 frees, 373,639,014 bytes allocated
+==189748== 
+==189748== All heap blocks were freed -- no leaks are possible
+==189748== 
+==189748== For lists of detected and suppressed errors, rerun with: -s
+==189748== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+Clean Query: unavailable librarians and intuiting conceived noah 
+No documents match.
+-----------------------------------------------
+Clean Query: keen joined and eyed 
+No documents match.
+-----------------------------------------------
+Clean Query: overseas nicomachean labor 
+No documents match.
+-----------------------------------------------
+Clean Query: dish creatorwhat hour hinted or innovate 
+Matches 1 documents (ranked):
+score   1 doc 107: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-lean-startup-how-todays-entrepreneurs-use-continuous-innovation-to-create-radically-successful-businesses_260/index.html
+-----------------------------------------------
+Clean Query: substance 
+Matches 3 documents (ranked):
+score   1 doc 162: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/unbound-how-eight-technologies-made-us-human-transformed-society-and-brought-our-world-to-the-brink_950/index.html
+score   1 doc 336: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/dune-dune-1_151/index.html
+score   1 doc 444: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-edge-of-reason-bridget-jones-2_63/index.html
+-----------------------------------------------
+Clean Query: locals bella 
+No documents match.
+-----------------------------------------------
+Clean Query: spends 
+Matches 6 documents (ranked):
+score   2 doc 270: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/a-fierce-and-subtle-poison_875/index.html
+score   2 doc 404: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-lonely-ones_261/index.html
+score   2 doc 534: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/girl-in-the-blue-coat_160/index.html
+score   1 doc 197: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/a-heartbreaking-work-of-staggering-genius_115/index.html
+score   1 doc 353: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-psychopath-test-a-journey-through-the-madness-industry_857/index.html
+score   1 doc 370: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/kill-em-and-leave-searching-for-james-brown-and-the-american-soul_528/index.html
+-----------------------------------------------
+Clean Query: ostracism gains or jet 
+Matches 2 documents (ranked):
+score   1 doc 448: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-devil-wears-prada-the-devil-wears-prada-1_243/index.html
+score   1 doc 464: http://cs50tse.cs.dartmouth.edu/tse/toscrape/catalogue/the-perfect-play-play-by-play-1_352/index.html
+-----------------------------------------------
+Clean Query: inspiration mestories 
+No documents match.
+-----------------------------------------------
+Clean Query: scrimshawing 
+No documents match.
+-----------------------------------------------
+
+
+
