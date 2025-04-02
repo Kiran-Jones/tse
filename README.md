@@ -1,7 +1,5 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/Ihp37Zuq)
 # CS50 TSE
-### Student name: Kiran Jones
-### GitHub Username: Kiran-Jones
+### Kiran Jones
 
 ## Crawler
 Crawls webpages and saves their content in local files. Visit the crawler subdirectory for more information. 
